@@ -1,0 +1,13 @@
+{
+    "batch_size": 3,
+    "emb": 512,
+    "epochs": 2,
+    "learning_rate": 0.0001,
+    "model": "CMTarget",
+    "model_path": "",
+    "score_way": "MF",
+    "source": "drugbank",
+    "target": "hit",
+    "task": "predict",
+    "timestamp": "20260308_135630"
+}
