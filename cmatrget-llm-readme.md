@@ -1,3 +1,23 @@
+## 问题：
+![alt text](9aeac0382cee143e1f74c9c1c9a6e9b.png)
+## 关于MOE
+看百度MOE
+
+
+## 关于输入的特征对齐方式
+4. 更好的替代方案？如果你觉得插值法效果不佳，可以考虑以下更符合 Transformer 逻辑的方法：
+
+Adaptive Average Pooling (自适应平均池化)：torch.nn.AdaptiveAvgPool1d(target_size)。这在保留全局信息方面通常比单纯的线性插值更鲁棒。
+注意：需要先将维度转置为 $[B, C, N]$。
+
+Learnable Resampling (可学习重采样)：引入一个固定长度的 Query（如一组 Latent Tokens），通过 Cross-Attention 去原序列中提取信息。这是 Perceiver IO 等模型的核心思想。
+
+Global Attention Pooling：通过一个线性层计算每个 Token 的权重，加权求和得到固定维度的表示，而不是硬性缩放。
+
+总结建议如果你的 $N$ 维度代表的是空间或时间上的连续信号（如图像块、语音帧），你可以放心使用 interpolate。但如果 $N$ 维度是语言单词，建议优先使用 Padding/Truncate（补齐/截断）。如果必须缩放，请确保在插值后检查模型是否还能正确识别序列的边界。
+
+
+
 ## 任务待办
 
 ✅❌

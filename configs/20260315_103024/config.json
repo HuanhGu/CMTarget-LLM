@@ -1,15 +1,21 @@
 {
-    "batch_size": 16,
-    "checkpoint_interval": 8,
+    "batch_size": 32,
+    "checkpoint_interval": 10,
     "emb": 512,
-    "epochs": 2,
-    "learning_rate": 0.0001,
+    "epochs_train": 200,
+    "epochs_tune": 100,
+    "learning_rate": 0.001,
     "model": "CMTarget",
     "model_path": "",
-    "patience": 8,
+    "patience": 10,
     "score_way": "MF",
     "source_datapath": "./data/dataset/drugbank/drugbank.csv",
     "target_datapath": "./data/dataset/hit/hit.csv",
     "task": "train",
-    "timestamp": "20260314_214323"
+    "timestamp": "20260315_103024"
 }
+
+"""
+源域 200ep
+目标域 100ep
+"""

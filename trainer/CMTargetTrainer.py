@@ -13,7 +13,7 @@ from model.CMTargetModel import CMTargetModel
 from model.multi_fusion import *
 from model.moe import *
 from utils.metrix import *
-from utils.utils import TrainLogger, PredictLogger, get_data_new_path
+from utils.utils import TrainLogger, PredictLogger, MultiTaskLossWrapper
 from torch.utils.data import TensorDataset, DataLoader
 
 
@@ -29,7 +29,7 @@ class CMTargetTrainer():
 
         self.device = configs['device']
         self.learning_rate = configs['learning_rate']
-        self.epochs = configs['epochs']
+        self.epochs = configs['epochs_train']
         self.batch_size = configs['batch_size']
 
         # self.feature_extractor = feature_extractor
@@ -42,7 +42,14 @@ class CMTargetTrainer():
         self.test_loader = self.get_dataloader(test_encoder_path)
 
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
+        self.optimizer = optim.Adam(
+            [
+                {'params': self.model.parameters()},
+                {'params': self.loss_balancer.parameters(), 'lr': 0.01}
+            ],
+            lr=self.learning_rate
+        )
 
     def get_dataloader(self, train_encoder_path):
         checkpoint = torch.load(train_encoder_path)
@@ -102,8 +109,9 @@ class CMTargetTrainer():
             pred_score = pred_score.cpu()
             pred_loss = self.criterion(pred_score, label_batch)
 
-            # 总损失 = 对比损失 + 负载均衡损失 + 预测损失
-            loss = contrastive_Loss + load_balancing_loss + pred_loss
+            # 总损失 = 对比损失 + 负载均衡损失 + 预测损失 19 + 2 + 0.6930
+            loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
+            # contrastive_Loss + load_balancing_loss + pred_loss
 
             # 反向传播和优化
             loss.backward()
@@ -116,7 +124,7 @@ class CMTargetTrainer():
             correct += (predicted == label_batch).sum().item()
             total += label_batch.size(0)
 
-        avg_loss = running_loss / len(self.train_loader)
+        avg_loss = running_loss * self.batch_size / len(self.train_loader)  # running_loss / batch_num
         accuracy = correct / total * 100
         print(f"Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
         return avg_loss

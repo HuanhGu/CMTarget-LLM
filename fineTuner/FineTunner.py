@@ -11,7 +11,7 @@ from model.CMTargetModel import CMTargetModel
 from model.multi_fusion import *
 from model.moe import *
 from utils.metrix import *
-from utils.utils import TrainLogger, PredictLogger, get_data_new_path
+from utils.utils import TrainLogger, PredictLogger, get_data_new_path, MultiTaskLossWrapper
 
 from peft import LoraConfig, get_peft_model
 from torch.utils.data import TensorDataset, DataLoader
@@ -39,7 +39,7 @@ class FineTunner():
 
         self.device = configs['device']
         self.learning_rate = configs['learning_rate']
-        self.epochs = configs['epochs']
+        self.epochs = configs['epochs_tune']
         self.batch_size = configs['batch_size']
 
         # self.feature_extractor = feature_extractor
@@ -50,8 +50,16 @@ class FineTunner():
         self.train_loader = self.get_dataloader(train_encoder_path)
         self.test_loader = self.get_dataloader(test_encoder_path)
 
+        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
+
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = optim.Adam(
+            [
+                {'params': self.model.parameters()},
+                {'params': self.loss_balancer.parameters(), 'lr': 0.01}
+            ],
+            lr=self.learning_rate
+        )
 
 
     def get_dataloader(self, train_encoder_path):
@@ -138,7 +146,8 @@ class FineTunner():
             pred_loss = self.criterion(pred_score, label_batch)
 
             # 总损失 = 对比损失 + 负载均衡损失 + 预测损失
-            loss = contrastive_Loss + load_balancing_loss + pred_loss
+            # loss = contrastive_Loss + load_balancing_loss + pred_loss
+            loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
 
             # 反向传播和优化
             loss.backward()

@@ -55,13 +55,11 @@ class CMTargetModel(nn.Module):
         self.pro_fusion_model = CrossModalFusionModel(self.pro_sequence_tklen, self.pro_structure_tklen, self.pro_knowledge_tklen, self.pro_token_dim)
         self.drug_fusion_model = CrossModalFusionModel(self.drug_sequence_tklen, self.drug_structure_tklen, self.drug_knowledge_tklen, self.drug_token_dim)
         
-
         # === 创建 基础专家 模型 ===
         self.basic_pro_moe = BasicMOE(self.pro_fusion_dim, self.pro_moe_dim, 3)   # (feature_in, feature_out, expert_num)[100,256]
         self.basic_drug_moe = BasicMOE(self.drug_fusion_dim, self.drug_moe_dim, 3)   # (feature_in, feature_out, expert_num)[768,256]
         
         # === 创建 打分 模型 ===
-        # self.predictor = Scorer(self.pro_moe_dim, self.drug_moe_dim, self.score_emb_dim, "MF")
         self.scorer = Scorer(configs)
 
 
@@ -106,13 +104,13 @@ class CMTargetModel(nn.Module):
         # 前向传播, 对比损失
         pro_fused_output, pro_fusion_loss = self.pro_fusion_model(pro_encoder_modals[0], pro_encoder_modals[1], pro_encoder_modals[2])
         drug_fused_output, drug_fusion_loss = self.drug_fusion_model(drug_encoder_modals[0], drug_encoder_modals[1], drug_encoder_modals[2])
-        contrastive_Loss = pro_fusion_loss + drug_fusion_loss
+        contrastive_Loss = pro_fusion_loss + drug_fusion_loss #9.9 + 8.4
 
         # 3. 专家编码器 : 不同蛋白和化合物的token用不同专家编码 
         # 专家编码输出, moe的负载均衡损失
         pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output) #in:[2,501,100] out:[2,501,256]
         drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output) #in:[2,68,78] out:[2,68,256]
-        load_balancing_loss = pro_moe_loss + drug_moe_loss        
+        load_balancing_loss = pro_moe_loss + drug_moe_loss     # 275 + 128    
 
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
         score = self.scorer.forward(pro_moe_output, drug_moe_output)

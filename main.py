@@ -28,17 +28,17 @@ def prepare():
     parser.add_argument('--task', type=str, default = "train", 
                         help="the stage:train, predict")
 
-    parser.add_argument('--checkpoint_interval', type=int, default=8)
-    parser.add_argument('-bs', '--batch_size', type = int, default = 16)
-    parser.add_argument('-ep', '--epochs', type=int, default = 2)
-    parser.add_argument('-lr', '--learning_rate', type=float, default = 1)
-    parser.add_argument('--patience', type = int, default=8) 
+    parser.add_argument('--checkpoint_interval', type=int, default=10)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 32)
+    parser.add_argument('-eptr', '--epochs_train', type=int, default = 200)
+    parser.add_argument('-eptu', '--epochs_tune', type=int, default = 100)
+    parser.add_argument('-lr', '--learning_rate', type=float, default = 1e-3)
+    parser.add_argument('--patience', type = int, default=10) 
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
     parser.add_argument('--source_datapath', type = str, default="./data/dataset/drugbank/drugbank.csv")
     parser.add_argument('--target_datapath', default='./data/dataset/hit/hit.csv')
-
     
     # parser.add_argument('--timestamp', type=str, default = "001")
     parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
@@ -54,7 +54,8 @@ def prepare():
     config['batch_size'] = args.batch_size
     config['checkpoint_interval'] = args.checkpoint_interval
     config['emb'] = args.embedding_dim
-    config['epochs'] = args.epochs  
+    config['epochs_train'] = args.epochs_train  
+    config['epochs_tune'] = args.epochs_tune 
     config['learning_rate'] = args.learning_rate
 
     config['model'] = args.model_name
@@ -96,7 +97,8 @@ if __name__ == '__main__':
     fintune_output_path = f"checkpoints/{configs['timestamp']}/fineTune.pt"
 
     if configs['task'] == 'train':
-        print(f"⚡train model {configs['model']}: epoch: {configs['epochs']}, batch_size: {configs['batch_size']}, lr: {configs['learning_rate']}")
+        print(f"⚡train model {configs['model']}: epoch_pretrain: {configs['epochs_train']},\
+               epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, lr: {configs['learning_rate']}")
 
         trainer = CMTargetTrainer(configs, configs['source_datapath'], configs['model_path'])
         trainer.train(pretrain_output_path)

@@ -1,0 +1,15 @@
+{
+    "batch_size": 32,
+    "checkpoint_interval": 10,
+    "emb": 512,
+    "epochs": 100,
+    "learning_rate": 0.001,
+    "model": "CMTarget",
+    "model_path": "",
+    "patience": 10,
+    "score_way": "MF",
+    "source_datapath": "./data/dataset/drugbank/drugbank.csv",
+    "target_datapath": "./data/dataset/hit/hit.csv",
+    "task": "train",
+    "timestamp": "20260315_015437"
+}

@@ -4,6 +4,28 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 import csv
 from pathlib import Path
+import torch.nn as nn
+import torch
+
+class MultiTaskLossWrapper(nn.Module):
+    def __init__(self, task_num):
+        super(MultiTaskLossWrapper, self).__init__()
+        # 初始化可学习参数 log(sigma^2)
+        # 初始化为 0，意味着初始权重为 1
+        self.log_vars = nn.Parameter(torch.zeros(task_num))
+
+    def forward(self, contrastive_loss, load_balancing_loss, pred_loss):
+        losses = [contrastive_loss, load_balancing_loss, pred_loss]
+        weighted_losses = []
+        
+        for i, loss in enumerate(losses):
+            # 计算权重: 1 / (2 * exp(log_var))
+            # 这里的 log_var 实际上是 log(sigma^2)
+            precision = torch.exp(-self.log_vars[i])
+            weighted_losses.append(precision * loss + self.log_vars[i])
+
+        return sum(weighted_losses)
+    
 
 def get_data_new_path(source_datapath, flag="train"):
     """根据source_datapath的文件名字, 获取encoder_path和shuffle_path,保持文件名字一致"""

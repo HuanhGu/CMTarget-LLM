@@ -69,12 +69,12 @@ class BasicMOE(nn.Module):
 
         # 专家路由【疑问：隐藏层如何选取?】
         # gate 就是选一个 expert 
-        # self.gate = nn.Linear(feature_in, expert_number)
         self.gate = nn.Sequential(
-            nn.Linear(feature_in, feature_in * 2),
-            nn.ReLU(),
-            nn.Linear(feature_in * 2, expert_number)
+            nn.Linear(feature_in, expert_number, bias=False) # 简单即正义
         )
+
+        # 建议：在输出端加个归一化，解决你提到的 [-10, 1] 分布不均问题
+        self.output_norm = nn.LayerNorm(feature_out)
     
     def forward(self, x):  
         "输入: 融合特征[2,501,100]  (batch_size, token_num, token_dim)"
@@ -85,7 +85,7 @@ class BasicMOE(nn.Module):
         
         # --- 计算负载均衡损失 (Auxiliary Loss) ---
         # f: 每个专家获得的权重均值 (Importance), 每个token被哪个专家选中
-        f = expert_weight.mean(0)  # [501, 3] 
+        f = expert_weight.view(-1, self.expert_number).mean(0) # [501, 3] 
         # P: 每个专家被选中的概率均值 (实际上在 Dense MoE 中 P = f)
         # 在 Sparse MoE 中，P 通常是样本被分配到该专家的频率
         # 这里为了演示通用公式：Loss = N * sum(f_i * P_i)
@@ -107,7 +107,7 @@ class BasicMOE(nn.Module):
         # expert_weight * expert_out_list   (2,501,3,1) * (2, 501, 3, 256)
         output = torch.sum(expert_weight * expert_output, dim=2) # (batch, token_num, feature_out)
         # output = (expert_weight @ expert_output).squeeze()  # (batch, 1, feature_out)   (2,1,3)
-
+        output = self.output_norm(output)
 
         return output, moe_loss
 

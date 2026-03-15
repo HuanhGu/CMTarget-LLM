@@ -73,3 +73,5 @@ if __name__ == '__main__':
     encoder_and_save(train_df, encoder_path = "./data/encoder/drugbank_encoder_80pct.pt")
     encoder_and_save(test_df, encoder_path = "./data/encoder/drugbank_encoder_20pct.pt")
 
+
+
