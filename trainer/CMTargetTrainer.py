@@ -3,6 +3,7 @@ import torch
 import torch.optim as optim
 from tqdm import tqdm
 import os
+import h5py
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -36,11 +37,16 @@ class CMTargetTrainer():
         self.model = self.get_model(model_path)
 
         
-        train_encoder_path = "./data/encoder/drugbank_encoder_80pct.pt"
-        test_encoder_path = "./data/encoder/drugbank_encoder_20pct.pt"
+        # train_encoder_path = "./data/encoder/drugbank_encoder_80pct.pt"
+        # test_encoder_path = "./data/encoder/drugbank_encoder_20pct.pt"
+        train_encoder_path = "./data/encoder/dti2_encoder_80pct.h5"
+        test_encoder_path = "./data/encoder/dti2_encoder_20pct.h5"
+        print("📕get pre-train dataloader.")
         self.train_loader = self.get_dataloader(train_encoder_path)
+        print("📕get pre-test dataloader.")
         self.test_loader = self.get_dataloader(test_encoder_path)
 
+        print("some settings...")
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
         self.optimizer = optim.Adam(
@@ -52,14 +58,29 @@ class CMTargetTrainer():
         )
 
     def get_dataloader(self, train_encoder_path):
-        checkpoint = torch.load(train_encoder_path)
+        # 判断文件类型
+        file_ext = os.path.splitext(train_encoder_path)[-1].lower()
 
-        # 1. 重新封装成数据集
-        dataset = TensorDataset(
-            checkpoint["protein"], 
-            checkpoint["drug"], 
-            checkpoint["label"]
-        )
+        if file_ext in ['.h5', '.hdf5']:
+            with h5py.File(train_encoder_path, "r") as f:
+                # 读取全部数据到内存（如果数据太大，可以使用切片分批读取）
+                protein = torch.tensor(f["protein"][:], dtype=torch.float32)
+                drug = torch.tensor(f["drug"][:], dtype=torch.float32)
+                label = torch.tensor(f["label"][:], dtype=torch.float32)
+
+            # 构建 dataset
+            dataset = TensorDataset(protein, drug, label)
+        
+        elif file_ext in ['.pt', '.pth']:
+            checkpoint = torch.load(train_encoder_path)
+            # 1. 重新封装成数据集
+            dataset = TensorDataset(
+                checkpoint["protein"], 
+                checkpoint["drug"], 
+                checkpoint["label"]
+            )
+        else:
+            print("there are no encoder files, please execute feature_save.py")
 
         # 2. 定义新的可遍历对象
         # 这样你可以自由决定加载时的 batch_size，不一定要和保存前一样
@@ -141,7 +162,7 @@ class CMTargetTrainer():
             y_true = []
             y_score = []
             i = 1
-            total = len(self.test_loader)
+            total = len(self.test_loader)-1  #305
             loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0)
 
             for protein_batch, compound_batch, label_batch in loop:

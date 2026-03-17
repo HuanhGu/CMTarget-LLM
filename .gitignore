@@ -5,6 +5,8 @@ data/
 z-dustbin/
 z-exectue_logs/
 .vscode/
+/embedding/ChemBERTa/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
