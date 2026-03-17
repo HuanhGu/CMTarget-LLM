@@ -16,7 +16,8 @@ setup(
         "gensim>=4.4.0",
         "scikit-learn>=1.1.3",
         "matplotlib>=3.6.3",
-        "peft>=0.17.1"
+        "peft>=0.17.1",
+        "h5py"
     ],
     python_requires=">=3.9",      # Python 版本要求
 )

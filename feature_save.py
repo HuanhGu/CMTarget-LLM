@@ -24,8 +24,8 @@ def encoder_and_save(df,
         for compound_batch, protein_batch, label_batch in pbar:        
             p_feats = feature_extractor.pro_fea_extract(protein_batch)
             d_feats = feature_extractor.drug_fea_extract_chemberta(compound_batch)
-            print(p_feats.shape)  #[8, 256, 100]
-            print(d_feats.shape) # [8, 128, 768]
+            # print(p_feats.shape)  #[8, 256, 100]
+            # print(d_feats.shape) # [8, 128, 768]
             
             
             # 2. 收集数据 (建议直接转成 CPU tensor 节省内存)
@@ -59,6 +59,7 @@ if __name__ == '__main__':
     
     # 1. 加载数据集df
     
+    '''
     hit_path="./data/dataset/hit/hit.csv"
     d_df = pd.read_csv(hit_path)
     train_df, test_df = train_test_split(d_df, test_size=0.2, random_state=0, shuffle=True)
@@ -72,6 +73,11 @@ if __name__ == '__main__':
     train_df, test_df = train_test_split(d_df, test_size=0.2, random_state=0, shuffle=True)
     encoder_and_save(train_df, encoder_path = "./data/encoder/drugbank_encoder_80pct.pt")
     encoder_and_save(test_df, encoder_path = "./data/encoder/drugbank_encoder_20pct.pt")
+    '''
 
-
-
+    
+    dti2_path="./data/dataset/dti2/dti2.csv"
+    d_df = pd.read_csv(dti2_path) 
+    train_df, test_df = train_test_split(d_df, test_size=0.2, random_state=0, shuffle=True)
+    encoder_and_save(train_df, encoder_path = "./data/encoder/dti2_encoder_80pct.pt")
+    encoder_and_save(test_df, encoder_path = "./data/encoder/dti2_encoder_20pct.pt")

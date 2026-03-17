@@ -30,14 +30,15 @@ def prepare():
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
     parser.add_argument('-bs', '--batch_size', type = int, default = 32)
-    parser.add_argument('-eptr', '--epochs_train', type=int, default = 200)
-    parser.add_argument('-eptu', '--epochs_tune', type=int, default = 100)
-    parser.add_argument('-lr', '--learning_rate', type=float, default = 1e-3)
+    parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
+    parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
+    parser.add_argument('-lr', '--learning_rate', type=float, default = 1e-2)
     parser.add_argument('--patience', type = int, default=10) 
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
-    parser.add_argument('--source_datapath', type = str, default="./data/dataset/drugbank/drugbank.csv")
+    # parser.add_argument('--source_datapath', type = str, default="./data/dataset/drugbank/drugbank.csv")
+    parser.add_argument('--source_datapath', type = str, default="./data/dataset/dit2/dti2.csv")
     parser.add_argument('--target_datapath', default='./data/dataset/hit/hit.csv')
     
     # parser.add_argument('--timestamp', type=str, default = "001")
@@ -117,3 +118,14 @@ if __name__ == '__main__':
         predictor.predict()
 
 
+"""
+nohup /opt/conda/envs/cmtarget1/bin/python feature_save_hf.py /root/gpufree-data/workplace/CMTarget-LLM/ > feature_df_03170915.log 2>&1 &
+tail -f feature_df_03170915.log
+ps -ef | grep feature_save_hf.py
+nvidia-smi
+kill -9 <PID>
+
+nohup python -u main.py > main_03170957.log 2>&1 &
+tail -f main_03170957.log
+ps -ef | grep main.py
+"""
