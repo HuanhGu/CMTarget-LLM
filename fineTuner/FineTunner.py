@@ -50,7 +50,7 @@ class FineTunner():
         self.train_loader = self.get_dataloader(train_encoder_path)
         self.test_loader = self.get_dataloader(test_encoder_path)
 
-        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
+        self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器
 
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
         self.optimizer = optim.Adam(
@@ -147,7 +147,8 @@ class FineTunner():
 
             # 总损失 = 对比损失 + 负载均衡损失 + 预测损失
             # loss = contrastive_Loss + load_balancing_loss + pred_loss
-            loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
+            loss = load_balancing_loss + pred_loss
+            # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
 
             # 反向传播和优化
             loss.backward()

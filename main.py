@@ -29,11 +29,11 @@ def prepare():
                         help="the stage:train, predict")
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
-    parser.add_argument('-bs', '--batch_size', type = int, default = 32)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 64)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-plr', '--pretrain_learning_rate', type=float, default = 5e-3)
-    parser.add_argument('-tlr', '--tune_learning_rate', type=float, default = 7e-4)
+    parser.add_argument('-plr', '--pretrain_learning_rate', type=float, default = 5e-4)
+    parser.add_argument('-tlr', '--tune_learning_rate', type=float, default = 5e-5)
     parser.add_argument('--patience', type = int, default=10) 
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
@@ -128,7 +128,7 @@ ps -ef | grep feature_save_hf.py
 nvidia-smi
 kill -9 <PID>
 
-nohup python -u main.py > main_03170957.log 2>&1 &
-tail -f main_03170957.log
+nohup python -u main.py > main_0317_1300.log 2>&1 &
+tail -f main_0317_1300.log
 ps -ef | grep main.py
 """

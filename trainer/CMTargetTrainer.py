@@ -36,7 +36,6 @@ class CMTargetTrainer():
         # self.feature_extractor = feature_extractor
         self.model = self.get_model(model_path)
 
-        
         # train_encoder_path = "./data/encoder/drugbank_encoder_80pct.pt"
         # test_encoder_path = "./data/encoder/drugbank_encoder_20pct.pt"
         train_encoder_path = "./data/encoder/dti2_encoder_80pct.h5"
@@ -48,7 +47,7 @@ class CMTargetTrainer():
 
         print("some settings...")
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
-        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
+        self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器
         self.optimizer = optim.Adam(
             [
                 {'params': self.model.parameters()},
@@ -63,48 +62,26 @@ class CMTargetTrainer():
 
         if file_ext in ['.h5', '.hdf5']:
             with h5py.File(train_encoder_path, "r") as f:
-                # 读取全部数据到内存（如果数据太大，可以使用切片分批读取）
                 protein = torch.tensor(f["protein"][:], dtype=torch.float32)
                 drug = torch.tensor(f["drug"][:], dtype=torch.float32)
                 label = torch.tensor(f["label"][:], dtype=torch.float32)
-
-            # 构建 dataset
             dataset = TensorDataset(protein, drug, label)
-        
         elif file_ext in ['.pt', '.pth']:
             checkpoint = torch.load(train_encoder_path)
-            # 1. 重新封装成数据集
-            dataset = TensorDataset(
-                checkpoint["protein"], 
-                checkpoint["drug"], 
-                checkpoint["label"]
-            )
+            dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
         else:
             print("there are no encoder files, please execute feature_save.py")
 
-        # 2. 定义新的可遍历对象
-        # 这样你可以自由决定加载时的 batch_size，不一定要和保存前一样
         val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         return val_loader
 
 
-    '''
-    def get_dataloader(self, origin_datapath):
-        """划分训练集, 并得到 dataloader [sequence, smiles, label]"""
-        df = pd.read_csv(origin_datapath) # [3,3]
-        train_df, test_df = train_test_split(df, test_size=0.2, random_state=0, shuffle=True)
-        train_seq_loader = DataLoader(DTIDataset(train_df), batch_size=self.batch_size, shuffle=True)
-        test_seq_loader = DataLoader(DTIDataset(test_df), batch_size=self.batch_size, shuffle=True)
-
-        return train_seq_loader, test_seq_loader
-    '''
 
     def get_model(self, model_path):
         model = CMTargetModel(self.configs)
         if model_path != '':
             print('Get model from:', model_path)
             model.load_model(model_path)
-
         return model
     
 
@@ -131,7 +108,8 @@ class CMTargetTrainer():
             pred_loss = self.criterion(pred_score, label_batch)
 
             # 总损失 = 对比损失 + 负载均衡损失 + 预测损失 19 + 2 + 0.6930
-            loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
+            loss = load_balancing_loss + pred_loss
+            # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
             # contrastive_Loss + load_balancing_loss + pred_loss
 
             # 反向传播和优化
