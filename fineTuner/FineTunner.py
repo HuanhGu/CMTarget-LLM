@@ -38,7 +38,7 @@ class FineTunner():
         self.source_data_path = target_datapath
 
         self.device = configs['device']
-        self.learning_rate = configs['learning_rate']
+        self.learning_rate = configs['tune_learning_rate']
         self.epochs = configs['epochs_tune']
         self.batch_size = configs['batch_size']
 

@@ -32,7 +32,8 @@ def prepare():
     parser.add_argument('-bs', '--batch_size', type = int, default = 32)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-lr', '--learning_rate', type=float, default = 1e-2)
+    parser.add_argument('-plr', '--pretrain_learning_rate', type=float, default = 5e-3)
+    parser.add_argument('-tlr', '--tune_learning_rate', type=float, default = 7e-4)
     parser.add_argument('--patience', type = int, default=10) 
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
@@ -57,7 +58,8 @@ def prepare():
     config['emb'] = args.embedding_dim
     config['epochs_train'] = args.epochs_train  
     config['epochs_tune'] = args.epochs_tune 
-    config['learning_rate'] = args.learning_rate
+    config['pretrain_learning_rate'] = args.pretrain_learning_rate
+    config['tune_learning_rate'] = args.tune_learning_rate
 
     config['model'] = args.model_name
     config['model_path'] = args.model_path
@@ -99,7 +101,8 @@ if __name__ == '__main__':
 
     if configs['task'] == 'train':
         print(f"⚡train model {configs['model']}: epoch_pretrain: {configs['epochs_train']},\
-               epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, lr: {configs['learning_rate']}")
+               epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, \
+               pretrain-lr:{configs['pretrain_learning_rate']},tune-lr: {configs['tune_learning_rate']}")
 
         trainer = CMTargetTrainer(configs, configs['source_datapath'], configs['model_path'])
         trainer.train(pretrain_output_path)

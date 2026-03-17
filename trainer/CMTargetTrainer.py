@@ -29,7 +29,7 @@ class CMTargetTrainer():
         self.source_data_path = source_datapath
 
         self.device = configs['device']
-        self.learning_rate = configs['learning_rate']
+        self.learning_rate = configs['pretrain_learning_rate']
         self.epochs = configs['epochs_train']
         self.batch_size = configs['batch_size']
 
@@ -196,7 +196,7 @@ class CMTargetTrainer():
 
         # drug_list = self.train_loader.dataset.data['compound'].tolist() + self.test_loader.dataset.data['compound'].tolist()
         # protein_list = self.train_loader.dataset.data['protein'].tolist() + self.test_loader.dataset.data['protein'].tolist()
-
+        
         logger = TrainLogger(f"Training", self.configs['timestamp'])
         # logger.update_protein_drug(protein_list, drug_list)
 
