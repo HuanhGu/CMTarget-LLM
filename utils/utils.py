@@ -66,15 +66,18 @@ class TrainLogger:
         self.y_true = []
         self.y_score = []
 
-    def log_loss(self, loss):
-        self.losses.append(loss)
+        self.test_losses = []
 
-    def plot_loss(self):
+    def log_loss(self, loss, test_loss):
+        self.losses.append(loss)
+        self.test_losses.append(test_loss)
+
+    def plot_loss(self, losses, flag="Training"):
         plt.figure(figsize=(10, 6))
-        plt.plot(range(1, len(self.losses) + 1), self.losses, label='Loss', color='b')
+        plt.plot(range(1, len(losses) + 1), losses, label='Loss', color='b')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        plt.title('Loss Curve During Training')
+        plt.title(f'Loss Curve During {flag}')
         plt.legend()
         plt.grid(True)
 
@@ -84,7 +87,7 @@ class TrainLogger:
         save_path = os.path.join(save_path, self.name)
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        plt.savefig(os.path.join(save_path, "loss.png"))
+        plt.savefig(os.path.join(save_path, f"loss_{flag}.png"))
 
     def log_metrix(self, recall, precision, f1, accuracy, auc):
         self.accuracy.append(accuracy)
@@ -167,7 +170,9 @@ class TrainLogger:
         plt.savefig(os.path.join(save_path, "roc_curve.png"), dpi=300)
 
     def __del__(self):
-        self.plot_loss()
+        self.plot_loss(self.losses, "Training")
+        self.plot_loss(self.test_losses, "Testing")
+        
         self.plot_metrics()
         self.plot_auc()
         self.write(f"[BEST] recall = {round(self.best_recall, 4)}, precision = {round(self.best_precision, 4)}, f1 = {round(self.best_f1, 4)}, accuracy ={round(self.best_accuracy, 4)}, auc = {round(self.best_auc, 4)}")

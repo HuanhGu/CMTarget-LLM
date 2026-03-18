@@ -73,7 +73,6 @@ class FineTunner():
         )
 
         # 2. 定义新的可遍历对象
-        # 这样你可以自由决定加载时的 batch_size，不一定要和保存前一样
         val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         return val_loader
     
@@ -98,29 +97,18 @@ class FineTunner():
             bias="none",
         )
 
-
         # 3. 包装模型
         # get_peft_model 会自动冻结所有非 LoRA 参数
         model = get_peft_model(model, lora_config)
-        
-        '''
-        # 4. (可选) 强制确保特定的层完全冻结
-        # 1. 首先冻结模型中所有的参数
-        for param in model.parameters():
-            param.requires_grad = False
-
-        # 2. 专门开启 self.scorer 的参数梯度
-        for param in model.scorer.parameters():
-            param.requires_grad = True
-        '''
-
-        # 查看哪些参数被解冻
-        # for name, param in model.named_parameters():
-            # print(name, param.requires_grad)
 
         model.print_trainable_parameters()
         return model
 
+    def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
+        "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
+        # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
+        loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1 + pred_loss
+        return loss
 
     def model_train_anepoch(self, model, epoch_id):
         model = model.to(self.device)
@@ -130,33 +118,22 @@ class FineTunner():
         correct = 0
         total = 0
         
-        for protein_batch, compound_batch, label_batch in tqdm(self.train_loader):        
-
-            # 清空梯度
+        for protein_batch, compound_batch, label_batch in tqdm(self.train_loader, desc="Tuning_An_Epoch",
+                                                               position=0, leave=True,ncols=100,ascii=False):
             self.optimizer.zero_grad()
 
-            # 前向传播：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
-            # outputs是概率值[batch_size,]
+            # 前向传播：特征对齐+MoE编码 , outputs概率
             pred_score, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
-            
-            # 计算预测损失  [2]  [2,1]
-            # label = label_batch.unsqueeze(1)  # 确保标签是一个列向量
-            # label = label.squeeze(1) #label:[2,1] → [2]
+
             pred_score = pred_score.cpu()
             pred_loss = self.criterion(pred_score, label_batch)
-
-            # 总损失 = 对比损失 + 负载均衡损失 + 预测损失
-            # loss = contrastive_Loss + load_balancing_loss + pred_loss
-            loss = load_balancing_loss + pred_loss
-            # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-
-            # 反向传播和优化
+            loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
+            
             loss.backward()
             self.optimizer.step()
 
             running_loss += loss.item()
 
-            # 计算准确率
             predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
             correct += (predicted == label_batch).sum().item()
             total += label_batch.size(0)
@@ -172,6 +149,7 @@ class FineTunner():
         evl_model = evl_model.to(self.device)
         evl_model.eval()
 
+        running_loss = 0.0
         targets, predicts = list(), list()
         threshold = 0.5
         with torch.no_grad():
@@ -179,12 +157,16 @@ class FineTunner():
             y_score = []
             i = 1
             total = len(self.test_loader)
-            loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0)
+            loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0,
+                        position=0, leave=True,ncols=100,ascii=False)
 
             for protein_batch, compound_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
                 pred_score, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
                 pred_score = pred_score.cpu()
+                pred_loss = self.criterion(pred_score, label_batch)
+                loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
+                running_loss += loss.item()
                 pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
                 
                 # 预测list 和  真值list
@@ -193,7 +175,6 @@ class FineTunner():
                 arr_targets = np.array(targets)
                 arr_predicts = np.array(predicts)
 
-                # 评价指标
                 recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)
                 
                 loop.set_description(f'Batch [{i}/{total}]')
@@ -203,7 +184,8 @@ class FineTunner():
                 y_true += label_batch.tolist()
                 y_score += pred_score.tolist()
 
-        return recall, precision, f1, accuracy, auc, y_true, y_score
+            avg_loss = running_loss / len(self.test_loader)
+        return recall, precision, f1, accuracy, auc, y_true, y_score, avg_loss
 
 
 
@@ -222,10 +204,10 @@ class FineTunner():
         for i in range(self.epochs):
             # print(f"\n the train epoch is : {i} \n")
             loss = self.model_train_anepoch(self.model, i)
-            recall, precision, f1, accuracy, auc, y_true, y_score = self.model_evaluate_anepoch(self.model, i)
+            recall, precision, f1, accuracy, auc, y_true, y_score, test_loss = self.model_evaluate_anepoch(self.model, i)
             
             logger.write(f"Epoch [{i + 1}/{self.epochs}]: loss = {round(loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}")
-            logger.log_loss(loss)
+            logger.log_loss(loss, test_loss)
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
             if f1 > max_f1:
@@ -235,7 +217,6 @@ class FineTunner():
                 self.model.save_model(output_path)
             else:
                 wait += 1
-
 
             if wait >= patience:
                 print(f"Early stopping triggered. Best F1: {max_f1}")

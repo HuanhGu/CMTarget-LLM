@@ -1,3 +1,5 @@
+## 3.17待办，给pretrain_test添加loss分析
+
 ## 问题：
 ![alt text](9aeac0382cee143e1f74c9c1c9a6e9b.png)
 ## 关于MOE

@@ -84,6 +84,13 @@ class CMTargetTrainer():
             model.load_model(model_path)
         return model
     
+    def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
+        "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
+        "量级 : [27+2+0.68]"
+
+        # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
+        loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1 + pred_loss
+        return loss
 
     def model_train_anepoch(self, model, epoch_id):
         model = model.to(self.device)
@@ -94,7 +101,8 @@ class CMTargetTrainer():
         total = 0
         
         # [smiles, seq, label]
-        for protein_batch, compound_batch, label_batch in tqdm(self.train_loader):        
+        for protein_batch, compound_batch, label_batch in tqdm(self.train_loader, desc="Training_An_Epoch",
+                                                               position=0,leave=True,ncols=100,ascii=False):        
 
             # 清空梯度
             self.optimizer.zero_grad()
@@ -107,10 +115,8 @@ class CMTargetTrainer():
             pred_score = pred_score.cpu()
             pred_loss = self.criterion(pred_score, label_batch)
 
-            # 总损失 = 对比损失 + 负载均衡损失 + 预测损失 19 + 2 + 0.6930
-            loss = load_balancing_loss + pred_loss
-            # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-            # contrastive_Loss + load_balancing_loss + pred_loss
+            # 总损失 = 对比损失 + 负载均衡损失 + 预测损失 19 + 2 + 0.6930[27+2+0.68]
+            loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
 
             # 反向传播和优化
             loss.backward()
@@ -123,7 +129,7 @@ class CMTargetTrainer():
             correct += (predicted == label_batch).sum().item()
             total += label_batch.size(0)
 
-        avg_loss = running_loss * self.batch_size / len(self.train_loader)  # running_loss / batch_num
+        avg_loss = running_loss / len(self.train_loader)  # running_loss / batch_num
         accuracy = correct / total * 100
         print(f"Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
         return avg_loss
@@ -136,19 +142,28 @@ class CMTargetTrainer():
 
         targets, predicts = list(), list()
         threshold = 0.5
+        running_loss = 0.0
+
         with torch.no_grad():
             y_true = []
             y_score = []
             i = 1
             total = len(self.test_loader)-1  #305
-            loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0)
+            loop = tqdm(self.test_loader, total=total, desc="Evaluate_An_Epoch",
+                        position=0, leave=True,ncols=100,ascii=False)
+            #  smoothing=0, mininterval=1.0,
 
             for protein_batch, compound_batch, label_batch in loop:
-                # 预测结果：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
+                # 预测结果：三种模态特征对齐融合+MoE编码
                 pred_score, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
                 pred_score = pred_score.cpu()
-                pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
+
+                pred_loss = self.criterion(pred_score, label_batch)
                 
+                loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
+                running_loss += loss.item()
+
+                pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
                 # 预测list 和  真值list
                 targets.extend(label_batch.tolist())
                 predicts.extend(pred.tolist())
@@ -164,8 +179,9 @@ class CMTargetTrainer():
                 i += 1
                 y_true += label_batch.tolist()
                 y_score += pred_score.tolist()
+            avg_loss = running_loss / len(self.test_loader)
 
-        return recall, precision, f1, accuracy, auc, y_true, y_score
+        return recall, precision, f1, accuracy, auc, y_true, y_score, avg_loss
 
 
 
@@ -186,10 +202,10 @@ class CMTargetTrainer():
 
         for i in range(self.epochs):
             loss = self.model_train_anepoch(self.model, i)
-            recall, precision, f1, accuracy, auc, y_true, y_score = self.model_evaluate_anepoch(self.model, i)
+            recall, precision, f1, accuracy, auc, y_true, y_score, test_loss = self.model_evaluate_anepoch(self.model, i)
             
             logger.write(f"Epoch [{i + 1}/{self.epochs}]: loss = {round(loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}")
-            logger.log_loss(loss)
+            logger.log_loss(loss, test_loss)
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
             if f1 > max_f1:
