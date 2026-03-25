@@ -107,7 +107,11 @@ class FineTunner():
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
         # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-        loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1 + pred_loss
+        # loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1 + pred_loss
+        # loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1
+        # loss = contrastive_Loss * 0.1 + load_balancing_loss + pred_loss * 5 # 量级：0~10
+        # loss = load_balancing_loss + pred_loss * 5 # 量级：0~10s
+        loss = pred_loss * 5 # 量级：0~10s
         return loss
 
     def model_train_anepoch(self, model, epoch_id):
@@ -117,21 +121,22 @@ class FineTunner():
         running_loss = 0.0
         correct = 0
         total = 0
-        
-        for protein_batch, compound_batch, label_batch in tqdm(self.train_loader, desc="Tuning_An_Epoch",
-                                                               position=0, leave=True,ncols=100,ascii=False):
+
+        pbar = tqdm(self.train_loader, desc="Tuning_An_Epoch", position=0, leave=True, ncols=100)
+        for protein_batch, compound_batch, label_batch in pbar:
             self.optimizer.zero_grad()
 
             # 前向传播：特征对齐+MoE编码 , outputs概率
             pred_score, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
 
-            pred_score = pred_score.cpu()
+            label_batch = label_batch.to(self.device)
             pred_loss = self.criterion(pred_score, label_batch)
             loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
             
             loss.backward()
             self.optimizer.step()
 
+            pbar.set_postfix({"loss": f"{loss.item():.4f}"})
             running_loss += loss.item()
 
             predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
@@ -178,8 +183,9 @@ class FineTunner():
                 recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)
                 
                 loop.set_description(f'Batch [{i}/{total}]')
-                loop.set_postfix(recall=round(recall, 4), precision=round(precision, 4), f1=round(f1, 4),
-                                 accuracy=round(accuracy, 4), auc=round(auc, 4))
+                loop.set_postfix(loss=f"{loss.item():.4f}", f1=round(f1, 4),
+                                 recall=round(recall, 4), pre=round(precision, 4), 
+                                 acc=round(accuracy, 4), auc=round(auc, 4))
                 i += 1
                 y_true += label_batch.tolist()
                 y_score += pred_score.tolist()
@@ -224,7 +230,13 @@ class FineTunner():
             
             # checkpoint 保存
             if (i + 1) % checkpoint_interval == 0:
-                checkpoint_path = f"./checkpoints/{self.configs['timestamp']}/finTune_checkpoint_epoch{i+1}.pt"
+                fname  = f"pretrain_checkpoint_epoch{i+1}.pt"
+                checkpoint_dir = os.path.join('logs', self.configs['timestamp'], 'checkpoints')
+                os.makedirs(checkpoint_dir, exist_ok=True)
+                
+                checkpoint_path = os.path.join(checkpoint_dir, fname)
+
+                # checkpoint_path = f"./checkpoints/{self.configs['timestamp']}/finTune_checkpoint_epoch{i+1}.pt"
                 self.model.save_model(checkpoint_path)
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path}")
 

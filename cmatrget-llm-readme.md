@@ -4,6 +4,7 @@
 ![alt text](9aeac0382cee143e1f74c9c1c9a6e9b.png)
 ## 关于MOE
 看百度MOE
+https://github.com/huggingface/transformers/blob/c368e139aade3ee7cdfa29387f3249168a912e5c/src/transformers/models/ernie4_5_moe/modeling_ernie4_5_moe.py#L355
 
 
 ## 关于输入的特征对齐方式

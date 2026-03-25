@@ -5,12 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python 调试程序: 包含参数的当前文件",
+            "name": "Python main",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "main.py",
             "console": "integratedTerminal",
-            "args": "${command:pickArgs}"
+            "cwd": "/root/gpufree-data/workplace/CMTarget-LLM/",
+            "python": "/opt/conda/envs/cmtarget1/bin/python",
+            "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         }
     ]
 }

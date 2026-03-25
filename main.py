@@ -29,11 +29,11 @@ def prepare():
                         help="the stage:train, predict")
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
-    parser.add_argument('-bs', '--batch_size', type = int, default = 64)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 128)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-plr', '--pretrain_learning_rate', type=float, default = 5e-4)
-    parser.add_argument('-tlr', '--tune_learning_rate', type=float, default = 5e-5)
+    parser.add_argument('-plr', '--pretrain_learning_rate', type=float, default = 5e-2)
+    parser.add_argument('-tlr', '--tune_learning_rate', type=float, default = 5e-3)
     parser.add_argument('--patience', type = int, default=10) 
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
@@ -81,11 +81,11 @@ if __name__ == '__main__':
     
     # 2. 获取超参数配置 ./configs/config.json
     configs = prepare()
-    
-    config_dir = os.path.join('configs', configs['timestamp'])
-    if not os.path.exists(config_dir):
-        os.makedirs(config_dir)
-    config_path = os.path.join(config_dir, 'config.json')
+
+    config_dir = Path('logs') / configs['timestamp'] / 'configs'
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_path = config_dir / 'config.json'
+
     with open(config_path, 'w') as f:
         json.dump(configs, f, indent=4)
     
@@ -95,9 +95,10 @@ if __name__ == '__main__':
     # 3. 训练模型
     # feature_extractor = FeatureExtractor()
     # 中间暂存模型路径
-    os.makedirs(f"checkpoints/{configs['timestamp']}", exist_ok=True)
-    pretrain_output_path = f"checkpoints/{configs['timestamp']}/pretrain.pt"
-    fintune_output_path = f"checkpoints/{configs['timestamp']}/fineTune.pt"
+    model_output_dir = Path("logs") / configs['timestamp'] /"checkpoints" 
+    os.makedirs(model_output_dir, exist_ok=True)
+    pretrain_output_path = model_output_dir / "pretrain.pt"
+    fintune_output_path = model_output_dir / "fineTune.pt"
 
     if configs['task'] == 'train':
         print(f"⚡train model {configs['model']}: epoch_pretrain: {configs['epochs_train']},\

@@ -89,6 +89,36 @@ class TrainLogger:
             os.makedirs(save_path)
         plt.savefig(os.path.join(save_path, f"loss_{flag}.png"))
 
+    def plot_losses_together(self, train_losses, test_losses):
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))  # 1行2列
+
+        # 左图：训练 Loss
+        axes[0].plot(range(1, len(train_losses) + 1), train_losses, color='b', label='Training Loss')
+        axes[0].set_xlabel('Epoch')
+        axes[0].set_ylabel('Loss')
+        axes[0].set_title('Training Loss')
+        axes[0].legend()
+        axes[0].grid(True)
+        axes[0].set_ylim(bottom=0)
+
+        # 右图：测试 Loss
+        axes[1].plot(range(1, len(test_losses) + 1), test_losses, color='r', label='Testing Loss')
+        axes[1].set_xlabel('Epoch')
+        axes[1].set_ylabel('Loss')
+        axes[1].set_title('Testing Loss')
+        axes[1].legend()
+        axes[1].grid(True)
+        axes[1].set_ylim(bottom=0)
+
+        # 保存图像
+        save_path = os.path.join("logs", self.time, self.name)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        
+        plt.tight_layout()  # 自动调整子图间距
+        plt.savefig(os.path.join(save_path, "loss_training_testing_subplots.png"))
+        plt.close()
+
     def log_metrix(self, recall, precision, f1, accuracy, auc):
         self.accuracy.append(accuracy)
         self.auc.append(auc)
@@ -170,9 +200,10 @@ class TrainLogger:
         plt.savefig(os.path.join(save_path, "roc_curve.png"), dpi=300)
 
     def __del__(self):
-        self.plot_loss(self.losses, "Training")
-        self.plot_loss(self.test_losses, "Testing")
-        
+        # self.plot_loss(self.losses, "Training")
+        # self.plot_loss(self.test_losses, "Testing")
+        self.plot_losses_together(self.losses, self.test_losses)
+
         self.plot_metrics()
         self.plot_auc()
         self.write(f"[BEST] recall = {round(self.best_recall, 4)}, precision = {round(self.best_precision, 4)}, f1 = {round(self.best_f1, 4)}, accuracy ={round(self.best_accuracy, 4)}, auc = {round(self.best_auc, 4)}")

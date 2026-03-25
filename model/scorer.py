@@ -53,11 +53,15 @@ class SelfAttentionPooling(nn.Module):
         scores = torch.tanh(self.tune_linear1(x))    # (416,256) → (416,128)
         scores = self.linear2(scores)           # (416,128) → (416,1)
         scores = scores.squeeze(-1)             # (416,1) → (416)
-
+        '''
         attn_weights = F.softmax(scores, dim=-1)   # [416]
-
         attn_weights = attn_weights.unsqueeze(-1) # (416) → (416, 1)
         pooled = torch.sum(x * attn_weights, dim=-2)    # [256]
+        '''
+
+        attn_weights = torch.sigmoid(scores) # (416) 每个 token 独立打分
+        attn_weights = attn_weights.unsqueeze(-1)
+        pooled = torch.sum(x * attn_weights, dim=-2) / (torch.sum(attn_weights, dim=-2) + 1e-6)
         return pooled, attn_weights
     
 class Scorer(torch.nn.Module):
