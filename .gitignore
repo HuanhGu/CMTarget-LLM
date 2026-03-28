@@ -4,8 +4,8 @@ checkpoints/
 data/
 z-dustbin/
 z-exectue_logs/
-.vscode/
 /embedding/ChemBERTa/
+logs_V0/
 
 
 # Byte-compiled / optimized / DLL files

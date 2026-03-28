@@ -33,25 +33,26 @@ class FineTunner():
         dataloader: (compound, protein, label), [3, batch_size, token_num, token_dim]
     
     """
-    def __init__(self, configs, target_datapath, model_path):
+    def __init__(self, configs, target_name, model_path):
         self.configs = configs
-        self.source_data_path = target_datapath
+        self.target_name = target_name
 
         self.device = configs['device']
-        self.learning_rate = configs['tune_learning_rate']
+        self.learning_rate = configs['learning_rate_tune']
         self.epochs = configs['epochs_tune']
         self.batch_size = configs['batch_size']
 
-        # self.feature_extractor = feature_extractor
         self.model = self.get_model(model_path)
 
-        train_encoder_path = "./data/encoder/hit_encoder_80pct.pt"
-        test_encoder_path = "./data/encoder/hit_encoder_20pct.pt"
+
+        train_encoder_path = Path('data') / 'encoder' / target_name / 'encoder_80pct.h5'
+        test_encoder_path = Path('data') / 'encoder' / target_name / 'encoder_20pct.h5'
+
         self.train_loader = self.get_dataloader(train_encoder_path)
         self.test_loader = self.get_dataloader(test_encoder_path)
 
-        self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器
 
+        self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
         self.optimizer = optim.Adam(
             [
@@ -194,7 +195,7 @@ class FineTunner():
         return recall, precision, f1, accuracy, auc, y_true, y_score, avg_loss
 
 
-
+    
     def fineTune(self, output_path):
         print("\n🚀 start fine-Tuning...")
 

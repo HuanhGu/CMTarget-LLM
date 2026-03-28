@@ -24,27 +24,26 @@ class CMTargetTrainer():
         dataloader: (compound, protein, label), [3, batch_size, token_num, token_dim]
     
     """
-    def __init__(self, configs, source_datapath, model_path):
+    def __init__(self, configs, source_name, model_path):
         self.configs = configs
-        self.source_data_path = source_datapath
+        self.source_name = source_name
 
         self.device = configs['device']
-        self.learning_rate = configs['pretrain_learning_rate']
+        self.learning_rate = configs['learning_rate_pretrain']
         self.epochs = configs['epochs_train']
         self.batch_size = configs['batch_size']
 
-        # self.feature_extractor = feature_extractor
         self.model = self.get_model(model_path)
 
-        train_encoder_path = "./data/encoder/drugbank_encoder_80pct.pt"
-        test_encoder_path = "./data/encoder/drugbank_encoder_20pct.pt"
-        # train_encoder_path = "./data/encoder/dti2_encoder_80pct.h5"
-        # test_encoder_path = "./data/encoder/dti2_encoder_20pct.h5"
+
+        train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
+        test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
         print("📕get pre-train dataloader.")
         self.train_loader = self.get_dataloader(train_encoder_path)
         print("📕get pre-test dataloader.")
         self.test_loader = self.get_dataloader(test_encoder_path)
 
+        
         print("some settings...")
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
         self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器

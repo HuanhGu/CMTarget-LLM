@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python main",
+            "name": "main_remote_gpufree",
             "type": "debugpy",
             "request": "launch",
             "program": "main.py",
@@ -13,6 +13,17 @@
             "cwd": "/root/gpufree-data/workplace/CMTarget-LLM/",
             "python": "/opt/conda/envs/cmtarget1/bin/python",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}
+        },
+        {
+            "name": "main_local",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "cwd": "D:/Workplace/CMTarget-LLM/",
+            "python": "D:/Application/Anaconda3/envs/cmtarget/python.exe",
+            "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         }
+
     ]
 }

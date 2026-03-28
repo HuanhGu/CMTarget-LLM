@@ -168,19 +168,6 @@ dustbin代码：
 
 
 
-outputs：
-
-(tensor([0.4859, 0.4870], grad_fn=<SigmoidBackward0>), tensor(604.9968, grad_fn=<AddBackward0>), tensor(70.1427, grad_fn=<AddBackward0>))
-
-label：
-
-tensor([[1.],
-        [0.]])
-
-
-
-
-
 ## Encoder、Embdding、Forward、Inference区别
 
 - Encoder：序列→token_id
@@ -219,34 +206,5 @@ from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 config['timestamp'] = timestamp
 print(timestamp)  # 输出示例: 20260304_180521
-```
-
-
-
-
-
-```python
-config['batch_size'] = args.batch_size
-config['emb'] = args.embedding_dim
-config['epochs'] = args.epochs
-
-
-config['learning_rate'] = args.learning_rate
-
-config['model'] = args.model_name
-config['model_path'] = args.model_path
-
-config['score_way'] = args.score_way
-# config['score_dim'] = args.score_emb_dim
-config['source'] = args.source
-config['target'] = args.target
-config['task'] = args.task
-
-from datetime import datetime
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-config['timestamp'] = timestamp
-
-# config['timestamp'] = args.timestamp
-config['device'] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ```
 

@@ -25,29 +25,33 @@ warnings.filterwarnings("ignore")
 
 def prepare():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default = "train", 
-                        help="the stage:train, predict")
+
+    parser.add_argument('-bs', '--batch_size', type = int, default = 32)
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
-    parser.add_argument('-bs', '--batch_size', type = int, default = 128)
+    parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
+    parser.add_argument('--emb_align_way', type=str, default='interpolate')
+
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-plr', '--pretrain_learning_rate', type=float, default = 5e-2)
-    parser.add_argument('-tlr', '--tune_learning_rate', type=float, default = 5e-3)
+    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 5e-2)
+    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 5e-3)
+    parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
+    parser.add_argument('--model_path', type = str, default="")
+
     parser.add_argument('--patience', type = int, default=10) 
+    parser.add_argument('-pTok', '--protein_encoder_Token_num', type=int, default=416)
+    # parser.add_argument('-scD', '--score_emb_dim', type = int, default = 256)
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
-    # parser.add_argument('--source_datapath', type = str, default="./data/dataset/drugbank/drugbank.csv")
-    parser.add_argument('--source_datapath', type = str, default="./data/dataset/dit2/dti2.csv")
-    parser.add_argument('--target_datapath', default='./data/dataset/hit/hit.csv')
-    
+
+    parser.add_argument('--source_name', type = str, default="drugbank")
+    parser.add_argument('--target_name', default='hit')
+    parser.add_argument('--task', type=str, default = "train", 
+                        help="the stage:train, predict")
     # parser.add_argument('--timestamp', type=str, default = "001")
-    parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
-    parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
-    parser.add_argument('--model_path', type = str, default="")
-    parser.add_argument('-pTok', '--protein_encoder_Token_num', type=int, default=416)
-    # parser.add_argument('-scD', '--score_emb_dim', type = int, default = 256)
+
 
 
     args = parser.parse_args()
@@ -56,10 +60,11 @@ def prepare():
     config['batch_size'] = args.batch_size
     config['checkpoint_interval'] = args.checkpoint_interval
     config['emb'] = args.embedding_dim
+    config['emb_align_way'] = args.emb_align_way
     config['epochs_train'] = args.epochs_train  
     config['epochs_tune'] = args.epochs_tune 
-    config['pretrain_learning_rate'] = args.pretrain_learning_rate
-    config['tune_learning_rate'] = args.tune_learning_rate
+    config['learning_rate_pretrain'] = args.learning_rate_pretrain
+    config['learning_rate_tune'] = args.learning_rate_tune
 
     config['model'] = args.model_name
     config['model_path'] = args.model_path
@@ -67,10 +72,9 @@ def prepare():
     config['patience']=args.patience
     config['score_way'] = args.score_way
     # config['score_dim'] = args.score_emb_dim
-    config['source_datapath'] = args.source_datapath
-    config['target_datapath'] = args.target_datapath
+    config['source_name'] = args.source_name
+    config['target_name'] = args.target_name
     config['task'] = args.task
-
     config['timestamp'] = timestamp
     
     return config
@@ -93,7 +97,6 @@ if __name__ == '__main__':
     
 
     # 3. 训练模型
-    # feature_extractor = FeatureExtractor()
     # 中间暂存模型路径
     model_output_dir = Path("logs") / configs['timestamp'] /"checkpoints" 
     os.makedirs(model_output_dir, exist_ok=True)
@@ -105,10 +108,10 @@ if __name__ == '__main__':
                epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, \
                pretrain-lr:{configs['pretrain_learning_rate']},tune-lr: {configs['tune_learning_rate']}")
 
-        trainer = CMTargetTrainer(configs, configs['source_datapath'], configs['model_path'])
+        trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
         trainer.train(pretrain_output_path)
         
-        fineTunner = FineTunner(configs, configs['target_datapath'], configs['model_path'])#model
+        fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
         fineTunner.fineTune(fintune_output_path)    # 加载pre_train完毕后的model_path, 作为初始值
         
 

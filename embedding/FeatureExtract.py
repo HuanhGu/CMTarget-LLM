@@ -26,12 +26,18 @@ class FeatureExtractor(object):
         self.w2v_model = Word2Vec.load("./embedding/word2vec_30.model")
         
         print("Loading ChemBERTa model...")
-        # self.drug_tokenizer = AutoTokenizer.from_pretrained("seyonec/ChemBERTa-zinc-base-v1", local_files_only=True)
-        # self.drug_model = AutoModel.from_pretrained("seyonec/ChemBERTa-zinc-base-v1", local_files_only=True).to(self.device)
+        self.drug_tokenizer = AutoTokenizer.from_pretrained("seyonec/ChemBERTa-zinc-base-v1", local_files_only=True)
+        self.drug_model = AutoModel.from_pretrained("seyonec/ChemBERTa-zinc-base-v1", local_files_only=True).to(self.device)
         
+        '''
+        # 把chembert下载到本地
+        huggingface-cli download --resume-download seyonec/ChemBERTa-zinc-base-v1 --local-dir ./embedding/ChemBERTa
+
+        # 在服务器上使用, 先下载, 再使用下面这段代码加载模型
         local_model_path = "/root/gpufree-data/workplace/CMTarget-LLM/embedding/ChemBERTa/"
         self.drug_tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
         self.drug_model = AutoModel.from_pretrained(local_model_path, local_files_only=True).to(self.device)
+        '''
         self.drug_model.eval()
 
         # self.projection = nn.Linear(100, 1024)

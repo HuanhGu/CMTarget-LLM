@@ -25,7 +25,6 @@ def encoder_and_save(df,
 
         total_saved = 0
         for batch_idx, (compound_batch, protein_batch, label_batch) in pbar:
-        # for batch_idx, (compound_batch, protein_batch, label_batch) in enumerate(d_loader):
             # 提取特征
             p_feats = feature_extractor.pro_fea_extract(protein_batch).cpu().numpy()
             d_feats = feature_extractor.drug_fea_extract_chemberta(compound_batch).cpu().numpy()
@@ -39,15 +38,25 @@ def encoder_and_save(df,
 
     print(f"✅ 特征保存完成：{encoder_path} | 总计: {(batch_idx+1)*8} 条数据")
 
+
 if __name__ == '__main__':
-    
-    # 1. 加载数据集df
-    dti2_path="./data/dataset/dti2/dti2.csv"
-    d_df = pd.read_csv(dti2_path) 
+
+    dataname = 'hit'  #'dti2' 'drugbank'
+
+    csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
+    d_df = pd.read_csv(csv_path) 
     train_df, test_df = train_test_split(d_df, test_size=0.2, random_state=0, shuffle=True)
-    encoder_and_save(train_df, encoder_path = "./data/encoder/dti2_encoder_80pct.h5")
-    encoder_and_save(test_df, encoder_path = "./data/encoder/dti2_encoder_20pct.h5")
+
+
+    # 知道dataname, 数据集保存到./data/encoder/ <dataname> /encoder_80.pt
+    # 知道dataname, 数据集保存到./data/encoder/ <dataname> /encoder_20.pt
+    encoder_dir = Path('data') / 'encoder' / dataname
+    encoder_dir.mkdir(parents=True, exist_ok=True)
+    encoder_and_save(train_df, encoder_path = encoder_dir / 'encoder_80pct.h5')
+    encoder_and_save(test_df, encoder_path = encoder_dir / 'encoder_20pct.h5')
+
 
 """
+把chembert下载到本地
 huggingface-cli download --resume-download seyonec/ChemBERTa-zinc-base-v1 --local-dir ./embedding/ChemBERTa
 """
