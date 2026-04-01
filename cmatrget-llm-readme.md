@@ -368,3 +368,26 @@ print(timestamp)  # 输出示例: 20260304_180521
     
 ```
 
+
+
+## 模型运行问题
+
+```bash
+✅preTraining finished, model has been saved to logs\20260331_220922\checkpoints\pretrain.pt
+trainable params: 16,400 || all params: 12,231,839 || trainable%: 0.1341
+Traceback (most recent call last):
+  File "D:\Workplace\CMTarget-LLM\main.py", line 120, in <module>
+    fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
+  File "D:\Workplace\CMTarget-LLM\fineTuner\FineTunner.py", line 51, in __init__
+    self.train_loader = self.get_dataloader(train_encoder_path)
+  File "D:\Workplace\CMTarget-LLM\fineTuner\FineTunner.py", line 67, in get_dataloader
+    checkpoint = torch.load(train_encoder_path)
+  File "D:\Application\Anaconda3\envs\cmtarget\lib\site-packages\torch\serialization.py", line 1553, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+Please file an issue with the following so that we can make `weights_only=True` compatible with your use case: WeightsUnpickler error: Unsupported operand 72
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.
+
+```
+
