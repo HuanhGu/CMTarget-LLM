@@ -38,25 +38,21 @@ def prepare():
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 5e-3)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
-
+    
     parser.add_argument('--patience', type = int, default=10) 
-    parser.add_argument('-pTok', '--protein_encoder_Token_num', type=int, default=416)
-    # parser.add_argument('-scD', '--score_emb_dim', type = int, default = 256)
     parser.add_argument('-scW', '--score_way', type=str, default='MF', 
                         help="choose a scorer, MF,GMF,Cosine ")
-    
 
     parser.add_argument('--source_name', type = str, default="hit")#drugbank
     parser.add_argument('--target_name', default='hit')
-    parser.add_argument('--token_num_pro', default=1024)
-    parser.add_argument('--token_num_drug', default=512)
 
-
+    parser.add_argument('--token_num_pro', type = str, default='mean')#1024
+    parser.add_argument('--token_num_drug', type = str, default='max')#512
     parser.add_argument('--task', type=str, default = "train", 
-                        help="the stage:train, predict")
+                        help="choose the stage : train, predict")
     # parser.add_argument('--timestamp', type=str, default = "001")
 
-
+    parser.add_argument('--remark', type=str, default = "add Linear in CMTargetModel for encoded data.")
 
     args = parser.parse_args()
 
@@ -72,8 +68,10 @@ def prepare():
 
     config['model'] = args.model_name
     config['model_path'] = args.model_path
-    
     config['patience']=args.patience
+
+    config['remark'] = args.remark
+
     config['score_way'] = args.score_way
     # config['score_dim'] = args.score_emb_dim
     config['source_name'] = args.source_name

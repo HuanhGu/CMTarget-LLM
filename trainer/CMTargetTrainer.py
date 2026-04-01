@@ -224,7 +224,7 @@ class CMTargetTrainer():
                 # print(f"pretrain : No improvement in F1 for {wait} epoch(s).")
             
             if wait >= patience:
-                print(f"📊Early stopping triggered. Best F1: {max_f1}")
+                print(f"📊 Early stopping triggered. Best F1: {max_f1}")
                 break
             
             # checkpoint 保存
@@ -239,5 +239,5 @@ class CMTargetTrainer():
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path}")
 
 
-        print(f"\n✅preTraining finished, model has been saved to {output_path}")
+        print(f"\n✅ preTraining finished, model has been saved to {output_path}")
         

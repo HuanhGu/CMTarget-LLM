@@ -262,4 +262,4 @@ class FineTunner():
                 self.model.save_model(checkpoint_path)
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path}")
 
-        print(f"\n✅fine-Tuning finished, model has been saved to {output_path}")
+        print(f"\n✅ fine-Tuning finished, model has been saved to {output_path}")
