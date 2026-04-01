@@ -38,9 +38,9 @@ class CMTargetTrainer():
 
         train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
         test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
-        print("📕get pre-train dataloader.")
+        print("📕 get pre-train dataloader.")
         self.train_loader = self.get_dataloader(train_encoder_path)
-        print("📕get pre-test dataloader.")
+        print("📕 get pre-test dataloader.")
         self.test_loader = self.get_dataloader(test_encoder_path)
 
         
@@ -111,7 +111,7 @@ class CMTargetTrainer():
             self.optimizer.zero_grad()
 
             # 前向传播：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
-            # outputs是概率值[batch_size,]
+            # 1打分, 2损失
             pred_score, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
             
             # 计算预测损失  [2]  [2,1]

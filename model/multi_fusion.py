@@ -144,9 +144,12 @@ class CrossModalFusionModel(nn.Module):
         super(CrossModalFusionModel, self).__init__()
         
         # 自注意力层[d_model, d_k, d_v]
-        self.sequence_attention = SelfAttention(d_model, d_model, d_model)
-        self.structure_attention = SelfAttention(d_model, d_model, d_model)
-        self.knowledge_attention = SelfAttention(d_model, d_model, d_model)
+        # https://transformers.run/c1/attention/
+        d_k = d_model
+        d_v = d_model
+        self.sequence_attention = SelfAttention(d_model, d_k, d_v)
+        self.structure_attention = SelfAttention(d_model, d_k, d_v)
+        self.knowledge_attention = SelfAttention(d_model, d_k, d_v)
         
         # 融合层
         self.fusion_layer = nn.Linear(d_model * 3, d_model)

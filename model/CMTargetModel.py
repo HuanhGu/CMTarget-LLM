@@ -51,9 +51,9 @@ class CMTargetModel(nn.Module):
         self.score_emb_dim = 128                # 打分时的特征嵌入维度
         
         # 6. 模型可学习参数
-        # === 创建linear, 对 encoder_data嵌入
-        self.emb_data_pro = nn.Linear(self.pro_token_dim, self.pro_token_dim)
-        self.emb_data_drug = nn.Linear(self.drug_token_dim, self.drug_token_dim)
+        # === 创建linear, 对 encoder_data嵌入  # 参数范围 : [-0.1, 0.1]
+        self.emb_data_pro = nn.Linear(self.pro_token_dim, self.pro_token_dim)# [-0.1, 0.1]
+        self.emb_data_drug = nn.Linear(self.drug_token_dim, self.drug_token_dim)# [-0.04, 0.04]
 
 
         # === 创建 fusion 模型 =====
@@ -103,8 +103,8 @@ class CMTargetModel(nn.Module):
         )   # [3,2,43,768]  [3,2,73,768]  
         
         # 1. 编码数据的张量嵌入——可学习Linear
-        pro_encoder_modals = self.emb_data_pro(pro_encoder_modals)
-        drug_encoder_modals = self.emb_data_drug(drug_encoder_modals)
+        pro_encoder_modals = self.emb_data_pro(pro_encoder_modals) # 3,16,633,100
+        drug_encoder_modals = self.emb_data_drug(drug_encoder_modals) # 3,16,222,768
 
         # 2. 特征融合 —— 采用注意力机制
         # 2.1  蛋白质特征融合;2.2  化合物特征融合
