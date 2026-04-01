@@ -23,6 +23,17 @@
             "cwd": "D:/Workplace/CMTarget-LLM/",
             "python": "D:/Application/Anaconda3/envs/cmtarget/python.exe",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}
+        },
+        {
+            "name": "feature_save_local",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "feature_save_hf.py",
+            "console": "integratedTerminal",
+            "cwd": "D:/Workplace/CMTarget-LLM/",
+            "justMyCode": false,
+            "python": "D:/Application/Anaconda3/envs/cmtarget/python.exe",
+            "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         }
 
     ]

@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 32)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 16)
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
     parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
@@ -46,8 +46,12 @@ def prepare():
                         help="choose a scorer, MF,GMF,Cosine ")
     
 
-    parser.add_argument('--source_name', type = str, default="drugbank")
+    parser.add_argument('--source_name', type = str, default="hit")#drugbank
     parser.add_argument('--target_name', default='hit')
+    parser.add_argument('--token_num_pro', default=1024)
+    parser.add_argument('--token_num_drug', default=512)
+
+
     parser.add_argument('--task', type=str, default = "train", 
                         help="the stage:train, predict")
     # parser.add_argument('--timestamp', type=str, default = "001")
@@ -76,6 +80,8 @@ def prepare():
     config['target_name'] = args.target_name
     config['task'] = args.task
     config['timestamp'] = timestamp
+    config['token_num_pro'] = args.token_num_pro
+    config['token_num_drug'] = args.token_num_drug
     
     return config
 
@@ -106,7 +112,7 @@ if __name__ == '__main__':
     if configs['task'] == 'train':
         print(f"⚡train model {configs['model']}: epoch_pretrain: {configs['epochs_train']},\
                epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, \
-               pretrain-lr:{configs['pretrain_learning_rate']},tune-lr: {configs['tune_learning_rate']}")
+               pretrain-lr:{configs['learning_rate_pretrain']},tune-lr: {configs['learning_rate_tune']}")
 
         trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
         trainer.train(pretrain_output_path)

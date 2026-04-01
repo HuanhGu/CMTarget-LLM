@@ -174,27 +174,3 @@ class CrossModalFusionModel(nn.Module):
         # 融合后的输出
         return fused_output, seq_struct_loss + seq_kg_loss + struct_kg_loss
 
-
-'''
-# 示例输入维度
-sequence_dim = 128
-structure_dim = 256
-knowledge_dim = 64
-
-# 创建模型
-model = CrossModalFusionModel(sequence_dim, structure_dim, knowledge_dim)
-
-# 示例输入：序列、结构和知识表示
-sequence_input = torch.randn(10, sequence_dim)  # 批量大小为10(10,128)
-structure_input = torch.randn(10, structure_dim)
-knowledge_input = torch.randn(10, knowledge_dim)
-
-# 前向传播
-output, total_loss = model(sequence_input, structure_input, knowledge_input)
-
-# 输出结果
-print("Fused Output:", output.shape)  # 输出形状应为 (10, sequence_dim)
-print("Total Loss:", total_loss.item())  # 打印总损失值
-
-
-'''

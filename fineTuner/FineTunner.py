@@ -16,6 +16,7 @@ from utils.utils import TrainLogger, PredictLogger, get_data_new_path, MultiTask
 from peft import LoraConfig, get_peft_model
 from torch.utils.data import TensorDataset, DataLoader
 
+import h5py
 '''
 1. ⚠️ 注意：如果 linear2 是输出层（例如 [hidden → 1]），低秩矩阵的作用可能有限，因为矩阵很小。
 这种方式是不使用 LoRA，直接微调原始权重
@@ -64,6 +65,26 @@ class FineTunner():
 
 
     def get_dataloader(self, train_encoder_path):
+        # 判断文件类型
+        file_ext = os.path.splitext(train_encoder_path)[-1].lower()
+
+        if file_ext in ['.h5', '.hdf5']:
+            with h5py.File(train_encoder_path, "r") as f:
+                protein = torch.tensor(f["protein"][:], dtype=torch.float32)
+                drug = torch.tensor(f["drug"][:], dtype=torch.float32)
+                label = torch.tensor(f["label"][:], dtype=torch.float32)
+            dataset = TensorDataset(protein, drug, label)
+        elif file_ext in ['.pt', '.pth']:
+            checkpoint = torch.load(train_encoder_path)
+            dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
+        else:
+            print("there are no encoder files, please execute feature_save.py")
+
+        val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+        return val_loader
+    
+
+        '''
         checkpoint = torch.load(train_encoder_path)
 
         # 1. 重新封装成数据集
@@ -76,7 +97,7 @@ class FineTunner():
         # 2. 定义新的可遍历对象
         val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         return val_loader
-    
+    '''
 
     def get_model(self, model_path):
         # 1. 初始化原始模型

@@ -27,13 +27,13 @@ class CMTargetModel(nn.Module):
         self.device = configs['device']
 
         #  2 特征融合的超参数
-        self.pro_sequence_tklen = 416         # 蛋白质序列编码的token数目
-        self.pro_structure_tklen = 416 # 256  # 蛋白质结构编码的token数目
-        self.pro_knowledge_tklen = 416 # 64   # 蛋白质知识图谱提取的token数目 
+        self.pro_sequence_tklen = 416         # 蛋白质序列编码的token数目  416  config['token_num_pro']
+        self.pro_structure_tklen = 416 # 256  # 蛋白质结构编码的token数目  416
+        self.pro_knowledge_tklen = 416 # 64   # 蛋白质知识图谱提取的token数目 416
         self.pro_token_dim = 100              # 每个token的维度 100
 
 
-        self.drug_sequence_tklen = 43          # 化合物序列编码的token数目
+        self.drug_sequence_tklen = 43          # 化合物序列编码的token数目   config['token_num_drug']
         self.drug_structure_tklen = 43         # 化合物结构编码的token数目
         self.drug_knowledge_tklen = 43         # 化合物知识图谱提取的token数目 
         self.drug_token_dim = 768              # 每个token的维度 768
