@@ -120,7 +120,7 @@ class FineTunner():
         # loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1
         # loss = contrastive_Loss * 0.1 + load_balancing_loss + pred_loss * 5 # 量级：0~10
         # loss = load_balancing_loss + pred_loss * 5 # 量级：0~10s
-        loss = pred_loss * 5 # 量级：0~10s
+        loss = load_balancing_loss * 2# 量级：0~10s
         return loss
 
     def model_train_anepoch(self, model, epoch_id):

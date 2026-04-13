@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 16)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 64)
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
     parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
@@ -35,7 +35,7 @@ def prepare():
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 0.1)
-    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.01)
+    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.05)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
     

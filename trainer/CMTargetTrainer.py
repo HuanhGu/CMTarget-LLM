@@ -4,6 +4,7 @@ import torch.optim as optim
 from tqdm import tqdm
 import os
 import h5py
+from torchinfo import summary
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -89,7 +90,7 @@ class CMTargetTrainer():
         "量级 : [27+2+0.68]"
         # 19 + 2 + 0.6930[27+2+0.68]
         # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-        loss = pred_loss * 5 # 量级：0~10s
+        loss = load_balancing_loss  # 量级：0~10s
         return loss
 
     def model_train_anepoch(self, model, epoch_id):

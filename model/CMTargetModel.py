@@ -87,8 +87,8 @@ class CMTargetModel(nn.Module):
             pro_emb_loss:   protein的特征嵌入损失
             drug_emb_loss:  drug的特征嵌入损失
         """
-        protein_features = protein_features.to(self.device)
-        drug_features = drug_features.to(self.device)
+        protein_features = protein_features.to(self.device)#16,633,100
+        drug_features = drug_features.to(self.device)#16,222,768
 
         # 构造三模态
         # print(type(protein_features))

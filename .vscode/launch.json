@@ -11,7 +11,7 @@
             "program": "main.py",
             "console": "integratedTerminal",
             "cwd": "/root/gpufree-data/workplace/CMTarget-LLM/",
-            "python": "/opt/conda/envs/cmtarget1/bin/python",
+            "python": "/root/application/miniconda3/envs/cmtarget/bin/python",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         },
         {
