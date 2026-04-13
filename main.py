@@ -30,12 +30,12 @@ def prepare():
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
     parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
-    parser.add_argument('--emb_align_way', type=str, default='interpolate')
+    parser.add_argument('--emb_align_way', type=str, default='truncation_max_tokenLen')# interpolate
 
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 5e-2)
-    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 5e-3)
+    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 0.1)
+    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.01)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
     
@@ -70,8 +70,6 @@ def prepare():
     config['model_path'] = args.model_path
     config['patience']=args.patience
 
-    config['remark'] = args.remark
-
     config['score_way'] = args.score_way
     # config['score_dim'] = args.score_emb_dim
     config['source_name'] = args.source_name
@@ -80,6 +78,8 @@ def prepare():
     config['timestamp'] = timestamp
     config['token_num_pro'] = args.token_num_pro
     config['token_num_drug'] = args.token_num_drug
+
+    config['remark'] = args.remark
     
     return config
 
@@ -112,9 +112,11 @@ if __name__ == '__main__':
                epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, \
                pretrain-lr:{configs['learning_rate_pretrain']},tune-lr: {configs['learning_rate_tune']}")
 
+        # 源域训练
         trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
         trainer.train(pretrain_output_path)
         
+        # 目标域微调
         fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
         fineTunner.fineTune(fintune_output_path)    # 加载pre_train完毕后的model_path, 作为初始值
         

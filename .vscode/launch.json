@@ -20,7 +20,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "cwd": "D:/Workplace/CMTarget-LLM/",
+            "cwd": "D:/Workplace/2604-Thesis_2026_CMTarget/CMTarget-LLM",
             "python": "D:/Application/Anaconda3/envs/cmtarget/python.exe",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         },
@@ -30,7 +30,7 @@
             "request": "launch",
             "program": "feature_save_hf.py",
             "console": "integratedTerminal",
-            "cwd": "D:/Workplace/CMTarget-LLM/",
+            "cwd": "D:/Workplace/2604-Thesis_2026_CMTarget/CMTarget-LLM",
             "justMyCode": false,
             "python": "D:/Application/Anaconda3/envs/cmtarget/python.exe",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}

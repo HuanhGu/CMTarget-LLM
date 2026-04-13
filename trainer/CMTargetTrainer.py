@@ -46,14 +46,15 @@ class CMTargetTrainer():
         
         print("some settings...")
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
-        self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器
-        self.optimizer = optim.Adam(
-            [
-                {'params': self.model.parameters()},
-                {'params': self.loss_balancer.parameters(), 'lr': 0.01}
-            ],
-            lr=self.learning_rate
-        )
+        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        # self.optimizer = optim.Adam(
+        #     [
+        #         {'params': self.model.parameters()},
+        #         {'params': self.loss_balancer.parameters(), 'lr': self.learning_rate * 0.1}#使用较小的lr
+        #     ],
+        #     lr=self.learning_rate
+        # )
 
     def get_dataloader(self, train_encoder_path):
         # 判断文件类型
@@ -88,10 +89,6 @@ class CMTargetTrainer():
         "量级 : [27+2+0.68]"
         # 19 + 2 + 0.6930[27+2+0.68]
         # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-        # loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1 + pred_loss
-        # loss = contrastive_Loss * 0.01 + load_balancing_loss * 0.1  # 0.2279
-        # loss = contrastive_Loss * 0.1 + load_balancing_loss + pred_loss * 5 # 量级：0~10s
-        # loss = load_balancing_loss + pred_loss * 5 # 量级：0~10s
         loss = pred_loss * 5 # 量级：0~10s
         return loss
 
@@ -122,8 +119,8 @@ class CMTargetTrainer():
             loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
 
             # 反向传播和优化
-            loss.backward()
-            self.optimizer.step()
+            loss.backward() #计算梯度（找准方向）
+            self.optimizer.step() #更新参数
 
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
             running_loss += loss.item()
@@ -193,48 +190,46 @@ class CMTargetTrainer():
 
     def train(self, output_path):
         print("🚀 start pre-training...")
-
         # drug_list = self.train_loader.dataset.data['compound'].tolist() + self.test_loader.dataset.data['compound'].tolist()
         # protein_list = self.train_loader.dataset.data['protein'].tolist() + self.test_loader.dataset.data['protein'].tolist()
-        
         logger = TrainLogger(f"Training", self.configs['timestamp'])
         # logger.update_protein_drug(protein_list, drug_list)
 
         patience = self.configs['patience']
         checkpoint_interval = self.configs['checkpoint_interval']
-
         max_f1 = 0
         wait = 0  # 用于早停计数器
 
         for i in range(self.epochs):
+            # 模型训练与评估
             loss = self.model_train_anepoch(self.model, i)
             recall, precision, f1, accuracy, auc, y_true, y_score, test_loss = self.model_evaluate_anepoch(self.model, i)
             
+            # 日志
             logger.write(f"Epoch [{i + 1}/{self.epochs}]: loss = {round(loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}")
             logger.log_loss(loss, test_loss)
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
+            # 保存最优模型 : f1最大
             if f1 > max_f1:
                 logger.update_true_score(y_true, y_score)
                 max_f1 = f1
-                wait = 0  # 重置等待计数器
+                wait = 0  
                 self.model.save_model(output_path)
             else:
                 wait += 1
                 # print(f"pretrain : No improvement in F1 for {wait} epoch(s).")
             
+            # 早停
             if wait >= patience:
                 print(f"📊 Early stopping triggered. Best F1: {max_f1}")
                 break
             
-            # checkpoint 保存
+            # 每隔一定轮数, 保存 checkpoint
             if (i + 1) % checkpoint_interval == 0:
-                fname  = f"pretrain_checkpoint_epoch{i+1}.pt"
                 checkpoint_dir = os.path.join('logs', self.configs['timestamp'], 'checkpoints')
                 os.makedirs(checkpoint_dir, exist_ok=True)
-
-                checkpoint_path = os.path.join(checkpoint_dir, fname)
-                
+                checkpoint_path = os.path.join(checkpoint_dir, f"pretrain_checkpoint_epoch{i+1}.pt")
                 self.model.save_model(checkpoint_path)
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path}")
 

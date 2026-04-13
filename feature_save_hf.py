@@ -10,6 +10,9 @@ from sklearn.model_selection import train_test_split
 batch_size = 8
 feature_extractor = FeatureExtractor()
 
+"""
+提前获取最大token数量, feat_emb时做截断. 
+"""
 def encoder_and_save(df, encoder_path = "./data/encoder/drugbank_encoder_80pct.h5"):
     # 获取所有化合物序列的最大token数量
     d_max_tokenLen = feature_extractor.get_chemberta_max_length(df['compound'].tolist()) #222

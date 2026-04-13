@@ -53,15 +53,17 @@ class FineTunner():
         self.test_loader = self.get_dataloader(test_encoder_path)
 
 
-        self.loss_balancer = MultiTaskLossWrapper(task_num=2) # loss均衡器
+        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
-        self.optimizer = optim.Adam(
-            [
-                {'params': self.model.parameters()},
-                {'params': self.loss_balancer.parameters(), 'lr': 0.01}
-            ],
-            lr=self.learning_rate
-        )
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
+        # self.optimizer = optim.Adam(
+        #     [
+        #         {'params': self.model.parameters()},
+        #         {'params': self.loss_balancer.parameters(),'lr': self.learning_rate * 0.1}#使用较小的lr
+        #     ],
+        #     lr=self.learning_rate
+        # )
 
 
     def get_dataloader(self, train_encoder_path):
@@ -82,22 +84,7 @@ class FineTunner():
 
         val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         return val_loader
-    
 
-        '''
-        checkpoint = torch.load(train_encoder_path)
-
-        # 1. 重新封装成数据集
-        dataset = TensorDataset(
-            checkpoint["protein"], 
-            checkpoint["drug"], 
-            checkpoint["label"]
-        )
-
-        # 2. 定义新的可遍历对象
-        val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
-        return val_loader
-    '''
 
     def get_model(self, model_path):
         # 1. 初始化原始模型
