@@ -45,8 +45,11 @@ class CMTargetTrainer():
         self.test_loader = self.get_dataloader(test_encoder_path)
 
         print("some settings...")
-        self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
+
+        # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
+        self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
+        
         # self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)

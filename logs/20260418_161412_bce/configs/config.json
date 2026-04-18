@@ -14,7 +14,7 @@
     "source_name": "hit",
     "target_name": "hit",
     "task": "train",
-    "timestamp": "20260418_142241",
+    "timestamp": "20260418_161412",
     "token_num_pro": "mean",
     "token_num_drug": "max",
     "remark": "add Linear in CMTargetModel for encoded data."

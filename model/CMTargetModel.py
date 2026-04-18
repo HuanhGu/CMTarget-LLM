@@ -51,10 +51,18 @@ class CMTargetModel(nn.Module):
         self.score_emb_dim = 128                # 打分时的特征嵌入维度
         
         # 6. 模型可学习参数
-        # === 创建linear, 对 encoder_data嵌入  # 参数范围 : [-0.1, 0.1]
-        self.emb_data_pro = nn.Linear(self.pro_token_dim, self.pro_token_dim)# [-0.1, 0.1]
-        self.emb_data_drug = nn.Linear(self.drug_token_dim, self.drug_token_dim)# [-0.04, 0.04]
-
+        # === 创建linear, 避免机械使用 encoder_data;  添加归一化层，让输入更稳定  
+        # self.emb_data_pro = nn.Sequential(
+        #     nn.Linear(self.pro_token_dim, self.pro_token_dim)
+        # )
+        self.emb_data_pro = nn.Sequential(
+            nn.Linear(self.pro_token_dim, self.pro_token_dim),
+            nn.LayerNorm(self.pro_token_dim)
+        )
+        self.emb_data_drug = nn.Sequential(
+            nn.Linear(self.drug_token_dim, self.drug_token_dim),
+            nn.LayerNorm(self.drug_token_dim)
+        )
 
         # === 创建 fusion 模型 =====
         self.sequence_attention_pro = SelfAttention(self.pro_token_dim, self.pro_token_dim, self.pro_token_dim)
@@ -92,12 +100,14 @@ class CMTargetModel(nn.Module):
         """
         protein_features = protein_features.to(self.device)#16,633,100
         drug_features = drug_features.to(self.device)#16,222,768
-        # 1. probert_chemberta编码嵌入 → 张量 , 通过可学习Linear
-        pro_fused_output = self.emb_data_pro(protein_features) # 16,633,100
-        drug_fused_output = self.emb_data_drug(drug_features) # 16,222,768
+
+
+        # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化 → padding 0, 注意力机制的掩码
+        protein_features = self.emb_data_pro(protein_features) # 16,633,100
+        drug_features = self.emb_data_drug(drug_features) # 16,222,768
 
         pro_fused_output = self.sequence_attention_pro(protein_features) #128,633,100
-        drug_fused_output = self.sequence_attention_drug(drug_fused_output) #128,222,768
+        drug_fused_output = self.sequence_attention_drug(drug_features) #128,222,768
 
         # 不要三模态
         contrastive_Loss = 0

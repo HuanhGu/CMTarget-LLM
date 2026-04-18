@@ -32,7 +32,7 @@ class MF(torch.nn.Module):
         # output = torch.sigmoid(output)
         # 直接计算点积并求和: [batch_size]
         output = torch.sum(user_embedding * item_embedding, dim=-1)
-        output = torch.sigmoid(output)
+        # output = torch.sigmoid(output)
         return output
 
 class Cosine(torch.nn.Module):
