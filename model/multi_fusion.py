@@ -68,7 +68,7 @@ class SelfAttention(nn.Module):
         self.W_Q = nn.Linear(d_model, d_k)  #
         self.W_K = nn.Linear(d_model, d_k)
         self.W_V = nn.Linear(d_model, d_v)
-
+    
     def forward(self, x, mask = None):
         """
         前向传播
