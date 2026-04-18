@@ -57,8 +57,11 @@ class CMTargetModel(nn.Module):
 
 
         # === 创建 fusion 模型 =====
-        self.pro_fusion_model = CrossModalFusionModel(self.pro_sequence_tklen, self.pro_structure_tklen, self.pro_knowledge_tklen, self.pro_token_dim)
-        self.drug_fusion_model = CrossModalFusionModel(self.drug_sequence_tklen, self.drug_structure_tklen, self.drug_knowledge_tklen, self.drug_token_dim)
+        self.sequence_attention_pro = SelfAttention(self.pro_token_dim, self.pro_token_dim, self.pro_token_dim)
+        self.sequence_attention_drug = SelfAttention(self.drug_token_dim, self.drug_token_dim, self.drug_token_dim)
+
+        # self.pro_fusion_model = CrossModalFusionModel(self.pro_sequence_tklen, self.pro_structure_tklen, self.pro_knowledge_tklen, self.pro_token_dim)
+        # self.drug_fusion_model = CrossModalFusionModel(self.drug_sequence_tklen, self.drug_structure_tklen, self.drug_knowledge_tklen, self.drug_token_dim)
         
         # === 创建 基础专家 模型 ===
         self.basic_pro_moe = BasicMOE(self.pro_fusion_dim, self.pro_moe_dim, 3)   # (feature_in, feature_out, expert_num)[100,256]
@@ -89,7 +92,16 @@ class CMTargetModel(nn.Module):
         """
         protein_features = protein_features.to(self.device)#16,633,100
         drug_features = drug_features.to(self.device)#16,222,768
+        # 1. probert_chemberta编码嵌入 → 张量 , 通过可学习Linear
+        pro_fused_output = self.emb_data_pro(protein_features) # 16,633,100
+        drug_fused_output = self.emb_data_drug(drug_features) # 16,222,768
 
+        pro_fused_output = self.sequence_attention_pro(protein_features) #128,633,100
+        drug_fused_output = self.sequence_attention_drug(drug_fused_output) #128,222,768
+
+        # 不要三模态
+        contrastive_Loss = 0
+        """
         # 构造三模态
         # print(type(protein_features))
         pro_encoder_modals = torch.stack(
@@ -102,9 +114,6 @@ class CMTargetModel(nn.Module):
             dim=0
         )   # [3,2,43,768]  [3,2,73,768]  
         
-        # 1. 编码数据的张量嵌入——可学习Linear
-        pro_encoder_modals = self.emb_data_pro(pro_encoder_modals) # 3,16,633,100
-        drug_encoder_modals = self.emb_data_drug(drug_encoder_modals) # 3,16,222,768
 
         # 2. 特征融合 —— 采用注意力机制
         # 2.1  蛋白质特征融合;2.2  化合物特征融合
@@ -113,6 +122,8 @@ class CMTargetModel(nn.Module):
         pro_fused_output, pro_fusion_loss = self.pro_fusion_model(pro_encoder_modals[0], pro_encoder_modals[1], pro_encoder_modals[2])
         drug_fused_output, drug_fusion_loss = self.drug_fusion_model(drug_encoder_modals[0], drug_encoder_modals[1], drug_encoder_modals[2])
         contrastive_Loss = pro_fusion_loss + drug_fusion_loss #9.9 + 8.4
+        """
+        
 
         # 3. 专家编码器 : 不同蛋白和化合物的token用不同专家编码 
         # 专家编码输出, moe的负载均衡损失
