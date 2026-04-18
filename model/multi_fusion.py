@@ -92,7 +92,7 @@ class SelfAttention(nn.Module):
         V = self.W_V(x) #(seq_len, d_v)
 
         # 计算注意力
-        output= scaled_dot_product_attention(Q, K, V, mask)
+        output= scaled_dot_product_attention(Q, K, V, mask) #128,633,100
 
         return output
 

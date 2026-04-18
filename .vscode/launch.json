@@ -24,6 +24,18 @@
             "python": "D:/Application/Anaconda3/envs/cmtarget/python.exe",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         },
+
+        {
+            "name": "feature_save_gpufree",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "feature_save_hf.py",
+            "console": "integratedTerminal",
+            "cwd": "/root/gpufree-data/workplace/CMTarget-LLM/",
+            "justMyCode": false,
+            "python": "/root/application/miniconda3/envs/cmtarget/bin/python",
+            "env":{ "CUDA_VISIBLE_DEVICES": "0"}
+        },
         {
             "name": "feature_save_local",
             "type": "debugpy",

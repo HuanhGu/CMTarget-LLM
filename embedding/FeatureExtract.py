@@ -24,18 +24,24 @@ class FeatureExtractor(object):
         self.w2v_model = Word2Vec.load("./embedding/word2vec_30.model")
         
         print("Loading ChemBERTa model...")
+        '''
+        # 在本地使用, 直接加载缓存模型即可
         self.drug_tokenizer = AutoTokenizer.from_pretrained("seyonec/ChemBERTa-zinc-base-v1", local_files_only=True)
         self.drug_model = AutoModel.from_pretrained("seyonec/ChemBERTa-zinc-base-v1", local_files_only=True).to(self.device)
-        
         '''
-        # 把chembert下载到本地
-        huggingface-cli download --resume-download seyonec/ChemBERTa-zinc-base-v1 --local-dir ./embedding/ChemBERTa
 
+        '''
         # 在服务器上使用, 先下载, 再使用下面这段代码加载模型
+        # 把chembert下载到本地
+        export HF_ENDPOINT="https://hf-mirror.com"
+        huggingface-cli download --resume-download seyonec/ChemBERTa-zinc-base-v1 --local-dir ./embedding/ChemBERTa
+        '''
+        
         local_model_path = "/root/gpufree-data/workplace/CMTarget-LLM/embedding/ChemBERTa/"
         self.drug_tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
         self.drug_model = AutoModel.from_pretrained(local_model_path, local_files_only=True).to(self.device)
-        '''
+
+        # self.drug_tokenizer.pad_token_id = 0
         self.drug_model.eval()
 
 
@@ -119,7 +125,7 @@ class FeatureExtractor(object):
         inputs = self.drug_tokenizer(drug_sequence, return_tensors="pt", 
                                      padding='max_length', max_length=d_max_tokenLen,
                                      truncation=True).to(self.device) # input_ids : [batch, d_max_tokenLen] || [8, 222]
-        
+        # mask = inputs['attention_mask'].cpu()
         with torch.no_grad():
             outputs = self.drug_model(**inputs)
         

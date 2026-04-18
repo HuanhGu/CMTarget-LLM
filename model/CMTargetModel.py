@@ -58,10 +58,10 @@ class CMTargetModel(nn.Module):
         self.emb_data_pro = nn.Sequential(
             nn.Linear(self.pro_token_dim, self.pro_token_dim),
             nn.LayerNorm(self.pro_token_dim)
-        )
+        )# nn.Dropout(p=0.1)
+        # 化合物经过RobertaModel已经很规范了, 不需要只来一个linear 可学习就行
         self.emb_data_drug = nn.Sequential(
             nn.Linear(self.drug_token_dim, self.drug_token_dim),
-            nn.LayerNorm(self.drug_token_dim)
         )
 
         # === 创建 fusion 模型 =====
@@ -100,14 +100,17 @@ class CMTargetModel(nn.Module):
         """
         protein_features = protein_features.to(self.device)#16,633,100
         drug_features = drug_features.to(self.device)#16,222,768
+        
+        # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化→ padding 0, 注意力机制的掩码
+        # protein_mask = (protein_features != 0).float()
+        src_mask = (protein_features.sum(dim=-1) != 0).float()
+        protein_mask = src_mask.unsqueeze(1)  #128,1,633
 
-
-        # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化 → padding 0, 注意力机制的掩码
-        protein_features = self.emb_data_pro(protein_features) # 16,633,100
-        drug_features = self.emb_data_drug(drug_features) # 16,222,768
-
-        pro_fused_output = self.sequence_attention_pro(protein_features) #128,633,100
-        drug_fused_output = self.sequence_attention_drug(drug_features) #128,222,768
+        protein_encoder_learn = self.emb_data_pro(protein_features) # 16,633,100
+        pro_fused_output = self.sequence_attention_pro(protein_encoder_learn, protein_mask) #128,633,100
+        
+        drug_encoder_learn = self.emb_data_drug(drug_features) # 16,222,768
+        drug_fused_output = drug_encoder_learn
 
         # 不要三模态
         contrastive_Loss = 0

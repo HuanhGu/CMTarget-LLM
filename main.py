@@ -52,7 +52,7 @@ def prepare():
                         help="choose the stage : train, predict")
     # parser.add_argument('--timestamp', type=str, default = "001")
 
-    parser.add_argument('--remark', type=str, default = "add Linear in CMTargetModel for encoded data.")
+    parser.add_argument('-m', '--remark', type=str, default = "add Linear in CMTargetModel for encoded data.")
 
     args = parser.parse_args()
 
