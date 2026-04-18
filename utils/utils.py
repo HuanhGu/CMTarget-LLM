@@ -90,7 +90,15 @@ class TrainLogger:
         plt.savefig(os.path.join(save_path, f"loss_{flag}.png"))
 
     def plot_losses_together(self, train_losses, test_losses):
-        fig, axes = plt.subplots(1, 2, figsize=(14, 6))  # 1行2列
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6), layout="constrained")  # 1行2列
+
+        # 计算所有 loss 的最大最小值，用于居中显示
+        all_losses = train_losses + test_losses
+        loss_min = min(all_losses)
+        loss_max = max(all_losses)
+        padding = (loss_max - loss_min) * 0.2  # 上下增加 20% 空间，让曲线不贴边
+        ylim_lower = loss_min - padding
+        ylim_upper = loss_max + padding
 
         # 左图：训练 Loss
         axes[0].plot(range(1, len(train_losses) + 1), train_losses, color='b', label='Training Loss')
@@ -99,7 +107,7 @@ class TrainLogger:
         axes[0].set_title('Training Loss')
         axes[0].legend()
         axes[0].grid(True)
-        axes[0].set_ylim(bottom=0)
+        axes[0].set_ylim(ylim_lower, ylim_upper)  # 设置居中 y 轴范围
 
         # 右图：测试 Loss
         axes[1].plot(range(1, len(test_losses) + 1), test_losses, color='r', label='Testing Loss')
@@ -108,14 +116,13 @@ class TrainLogger:
         axes[1].set_title('Testing Loss')
         axes[1].legend()
         axes[1].grid(True)
-        axes[1].set_ylim(bottom=0)
+        axes[1].set_ylim(ylim_lower, ylim_upper)  # 同样设置 y 轴居中
 
         # 保存图像
         save_path = os.path.join("logs", self.time, self.name)
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         
-        plt.tight_layout()  # 自动调整子图间距
         plt.savefig(os.path.join(save_path, "loss_training_testing_subplots.png"))
         plt.close()
 

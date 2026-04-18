@@ -44,11 +44,12 @@ class CMTargetTrainer():
         print("📕 get pre-test dataloader.")
         self.test_loader = self.get_dataloader(test_encoder_path)
 
-        
         print("some settings...")
         self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        # self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)
         # self.optimizer = optim.Adam(
         #     [
         #         {'params': self.model.parameters()},
@@ -90,7 +91,7 @@ class CMTargetTrainer():
         "量级 : [27+2+0.68]"
         # 19 + 2 + 0.6930[27+2+0.68]
         # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-        loss = load_balancing_loss  # 量级：0~10s
+        loss = pred_loss  # 量级：0~10s
         return loss
 
     def model_train_anepoch(self, model, epoch_id):
@@ -122,7 +123,7 @@ class CMTargetTrainer():
             # 反向传播和优化
             loss.backward() #计算梯度（找准方向）
             self.optimizer.step() #更新参数
-
+            
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
             running_loss += loss.item()
 

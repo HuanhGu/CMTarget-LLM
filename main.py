@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 64)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 128)
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
     parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
@@ -34,7 +34,7 @@ def prepare():
 
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 0.1)
+    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 0.001)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.05)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
@@ -106,19 +106,21 @@ if __name__ == '__main__':
     os.makedirs(model_output_dir, exist_ok=True)
     pretrain_output_path = model_output_dir / "pretrain.pt"
     fintune_output_path = model_output_dir / "fineTune.pt"
-
+    
     if configs['task'] == 'train':
-        print(f"⚡train model {configs['model']}: epoch_pretrain: {configs['epochs_train']},\
-               epochs_tune: {configs['epochs_tune']}, batch_size: {configs['batch_size']}, \
-               pretrain-lr:{configs['learning_rate_pretrain']},tune-lr: {configs['learning_rate_tune']}")
-
+        print(
+        f"⚡[train model {configs['model']}]\n"
+        f"  batch_size: {configs['batch_size']}\n"
+        f"  epochs: {configs['epochs_train']} (pre) / {configs['epochs_tune']} (tune)\n"
+        f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
+        )
         # 源域训练
         trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
         trainer.train(pretrain_output_path)
         
         # 目标域微调
-        fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
-        fineTunner.fineTune(fintune_output_path)    # 加载pre_train完毕后的model_path, 作为初始值
+        # fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
+        # fineTunner.fineTune(fintune_output_path)    # 加载pre_train完毕后的model_path, 作为初始值
         
 
     elif configs['task'] == 'predict':

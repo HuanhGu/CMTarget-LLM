@@ -21,14 +21,17 @@ class GMF(torch.nn.Module):
 class MF(torch.nn.Module):
     def __init__(self, emb_dim):
         super().__init__()
-        self.emb_dim = emb_dim
-        self.tune_linear_MF = nn.Linear(in_features=emb_dim, out_features=1)
+        # self.emb_dim = emb_dim
+        # self.tune_linear_MF = nn.Linear(in_features=emb_dim, out_features=1)
 
     def forward(self, user_embedding, item_embedding):
-        reaction_result = user_embedding * item_embedding  # [batch_size, emb_dim][2,256]
-        reaction_result = self.tune_linear_MF(reaction_result) # [2,256] →  [2,1]
-        # output = torch.sum(reaction_result, dim=1)
-        output = torch.sum(reaction_result, dim=-1) # 修改,当batch=1时，dim就是-1[2]
+        # reaction_result = user_embedding * item_embedding  # [batch_size, emb_dim][2,256]
+        # reaction_result = self.tune_linear_MF(reaction_result) # [2,256] →  [2,1]
+        # # output = torch.sum(reaction_result, dim=1)
+        # output = output.squeeze(-1) # 去掉多余的 1 维度，变成 [batch_size]
+        # output = torch.sigmoid(output)
+        # 直接计算点积并求和: [batch_size]
+        output = torch.sum(user_embedding * item_embedding, dim=-1)
         output = torch.sigmoid(output)
         return output
 

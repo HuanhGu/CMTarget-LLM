@@ -122,7 +122,7 @@ class CMTargetModel(nn.Module):
 
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
         score = self.scorer.forward(pro_moe_output, drug_moe_output)
-
+        
         # pro_train_loss = pro_fusion_loss + pro_moe_loss
         # drug_train_loss = drug_fusion_loss + drug_moe_loss
         return score, contrastive_Loss, load_balancing_loss
