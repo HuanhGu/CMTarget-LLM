@@ -114,11 +114,11 @@ class CMTargetTrainer():
 
             # 前向传播：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
             # 1打分, 2损失
-            pred_score, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
+            logits, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
             
             # 计算预测损失  [2]  [2,1]
             label_batch = label_batch.to(self.device)
-            pred_loss = self.criterion(pred_score, label_batch)
+            pred_loss = self.criterion(logits, label_batch)
 
             # 总损失 = 对比损失 + 负载均衡损失 + 预测损失 19 + 2 + 0.6930[27+2+0.68]
             loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
@@ -131,6 +131,7 @@ class CMTargetTrainer():
             running_loss += loss.item()
 
             # 计算准确率
+            pred_score = torch.sigmoid(logits)
             predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
             correct += (predicted == label_batch).sum().item()
             total += label_batch.size(0)
@@ -161,22 +162,25 @@ class CMTargetTrainer():
 
             for protein_batch, compound_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码
-                pred_score, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
+                logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
+                pred_score = torch.sigmoid(logits)
                 pred_score = pred_score.cpu()
+                # predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
 
                 pred_loss = self.criterion(pred_score, label_batch)
                 
                 loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
                 running_loss += loss.item()
 
-                pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
+                # pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
+                pred = (pred_score > 0.5).float()  # 将输出转换为0或1
                 # 预测list 和  真值list
                 targets.extend(label_batch.tolist())
                 predicts.extend(pred.tolist())
                 arr_targets = np.array(targets)
                 arr_predicts = np.array(predicts)
 
-                # 评价指标
+                # 评价指标_这里的roc有问题输入应该是概率
                 recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)
                 
                 loop.set_description(f'Batch [{i}/{total}]')

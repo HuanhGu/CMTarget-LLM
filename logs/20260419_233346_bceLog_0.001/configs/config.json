@@ -1,0 +1,21 @@
+{
+    "batch_size": 128,
+    "checkpoint_interval": 10,
+    "emb": 512,
+    "emb_align_way": "truncation_max_tokenLen",
+    "epochs_train": 300,
+    "epochs_tune": 200,
+    "learning_rate_pretrain": 0.001,
+    "learning_rate_tune": 0.05,
+    "model": "CMTarget",
+    "model_path": "",
+    "patience": 10,
+    "score_way": "MF",
+    "source_name": "hit",
+    "target_name": "hit",
+    "task": "train",
+    "timestamp": "20260419_233346",
+    "token_num_pro": "mean",
+    "token_num_drug": "max",
+    "remark": "add Linear in CMTargetModel for encoded data."
+}
