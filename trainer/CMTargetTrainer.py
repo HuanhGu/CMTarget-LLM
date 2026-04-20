@@ -52,6 +52,10 @@ class CMTargetTrainer():
         
         # self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
+                                                cycle_momentum=False,
+                                                step_size_up=max(1, (len(self.train_loader) // self.batch_size)))
+        
         # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)
         # self.optimizer = optim.Adam(
         #     [
@@ -126,6 +130,7 @@ class CMTargetTrainer():
             # 反向传播和优化
             loss.backward() #计算梯度（找准方向）
             self.optimizer.step() #更新参数
+            self.scheduler.step()
             
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
             running_loss += loss.item()
@@ -138,7 +143,7 @@ class CMTargetTrainer():
 
         avg_loss = running_loss / len(self.train_loader)  # running_loss / batch_num
         accuracy = correct / total * 100
-        print(f"Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
+        print(f"🚂 Train Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
         return avg_loss
 
 
@@ -183,7 +188,7 @@ class CMTargetTrainer():
                 # 评价指标_这里的roc有问题输入应该是概率
                 recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)
                 
-                loop.set_description(f'Batch [{i}/{total}]')
+                loop.set_description(f'Evaluate Batch [{i-1}/{total}]')
                 loop.set_postfix(loss=f"{loss.item():.4f}", f1=round(f1, 4),
                     recall=round(recall, 4), pre=round(precision, 4), 
                     acc=round(accuracy, 4), auc=round(auc, 4))
@@ -240,7 +245,7 @@ class CMTargetTrainer():
                 os.makedirs(checkpoint_dir, exist_ok=True)
                 checkpoint_path = os.path.join(checkpoint_dir, f"pretrain_checkpoint_epoch{i+1}.pt")
                 self.model.save_model(checkpoint_path)
-                print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path}")
+                print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
 
 
         print(f"\n✅ preTraining finished, model has been saved to {output_path}")

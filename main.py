@@ -40,9 +40,9 @@ def prepare():
     parser.add_argument('--model_path', type = str, default="")
     
     parser.add_argument('--patience', type = int, default=10) 
-    parser.add_argument('-scW', '--score_way', type=str, default='MF', 
+    parser.add_argument('-scW', '--score_way', type=str, default='GMF', 
                         help="choose a scorer, MF,GMF,Cosine ")
-
+    
     parser.add_argument('--source_name', type = str, default="hit")#drugbank
     parser.add_argument('--target_name', default='hit')
 
@@ -53,7 +53,7 @@ def prepare():
     # parser.add_argument('--timestamp', type=str, default = "001")
 
     parser.add_argument('-m', '--remark', type=str, default = "add Linear in CMTargetModel for encoded data.")
-
+ 
     args = parser.parse_args()
 
     config = {}

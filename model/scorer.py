@@ -15,7 +15,7 @@ class GMF(torch.nn.Module):
     def forward(self, user_embedding, item_embedding):
         reaction_result = user_embedding * item_embedding  # [batch_size, max_atom_num, emb_dim]
         output = self.tune_fcn_GMF(reaction_result).squeeze(1)
-        output = torch.sigmoid(output)
+        # output = torch.sigmoid(output)
         return output
 
 class MF(torch.nn.Module):
@@ -41,7 +41,7 @@ class Cosine(torch.nn.Module):
 
     def forward(self, user_embedding, item_embedding):
         output = torch.cosine_similarity(user_embedding, item_embedding, dim=1)
-        output = torch.sigmoid(output)
+        # output = torch.sigmoid(output)
         return output
 
 
