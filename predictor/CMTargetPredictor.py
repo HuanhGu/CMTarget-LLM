@@ -6,7 +6,7 @@ import pandas as pd
 from utils.metrix import calculate_metrics
 from utils.utils import PredictLogger
 
-from embedding.dataset_build import FeatureExtractor, collate_fn, DTIDataset
+from embedding.dataset_build import FeatureExtractor, DTIDataset #collate_fn, 
 from embedding.FeatureExtract import *
 from model.CMTargetModel import *
 from model.multi_fusion import *

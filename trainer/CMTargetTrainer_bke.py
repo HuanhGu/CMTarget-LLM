@@ -5,20 +5,18 @@ from tqdm import tqdm
 import os
 import h5py
 from torchinfo import summary
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from torch.utils.data import TensorDataset, DataLoader
-from torch.utils.data import random_split
-from pathlib import Path
 
 from embedding.FeatureExtract import FeatureExtractor
-# from embedding.dataset_build import *
-from embedding.dataset import *
+from embedding.dataset_build import *
 from model.CMTargetModel import CMTargetModel
 from model.multi_fusion import *
 from model.moe import *
 from utils.metrix import *
 from utils.utils import TrainLogger, PredictLogger, MultiTaskLossWrapper
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class CMTargetTrainer():
@@ -37,12 +35,18 @@ class CMTargetTrainer():
         self.checkpoint_interval = configs['checkpoint_interval']
 
         self.model = self.get_model(model_path)
-        self.train_loader, self.test_loader = self.get_dataloader(source_name)
+
+        print("📕 get pretraining dataloader.")
+        train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
+        test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
+        self.train_loader = self.get_dataloader(train_encoder_path) #样本 3599, 29
+        self.test_loader = self.get_dataloader(test_encoder_path)
 
         print("some settings...")
         #-loss
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器[只写在这里不可训练，必须加到优化器里]
-        self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid; BCELoss&signomid
+        # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
+        self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
         #-weights 初始化
         for p in self.model.parameters():
             if p.dim() > 1:
@@ -57,32 +61,40 @@ class CMTargetTrainer():
         self.optimizer = optim.AdamW(
             [{'params': weight_p, 'weight_decay': 1e-4}, 
              {'params': bias_p, 'weight_decay': 0}], lr=self.learning_rate)
-
+        
+        # self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5) #Adam
         self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
                                                 cycle_momentum=False,
                                                 step_size_up=len(self.train_loader))
         
+        # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)
+        # self.optimizer = optim.Adam(
+        #     [
+        #         {'params': self.model.parameters()},
+        #         {'params': self.loss_balancer.parameters(), 'lr': self.learning_rate * 0.1}#使用较小的lr
+        #     ],
+        #     lr=self.learning_rate
+        # )
 
-    def get_dataloader(self, dataname = 'hit'):
-        """ pre-extract :  get feature using self embedding """
-        " 1. 读取序列数据集 "
-        csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
-        d_df = pd.read_csv(csv_path) 
-        full_dataset = DTIDataset(d_df)       # drug,pro,label
+    def get_dataloader(self, train_encoder_path):
+        # 判断文件类型
+        file_ext = os.path.splitext(train_encoder_path)[-1].lower()
 
-        "数据集划分"
-        total_sz = len(d_df) #4499
-        train_sz = int(0.8*total_sz) #3599
-        test_sz = total_sz - train_sz #900
-        train_dataset, test_dataset = random_split(full_dataset, [train_sz, test_sz])
-
-        "得到dataloader"
-        train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True,  num_workers=0,
-                                        collate_fn=collate_fn)
-        test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0,
-                                        collate_fn=collate_fn)
+        if file_ext in ['.h5', '.hdf5']:
+            with h5py.File(train_encoder_path, "r") as f:
+                protein = torch.tensor(f["protein"][:], dtype=torch.float32)
+                drug = torch.tensor(f["drug"][:], dtype=torch.float32)
+                label = torch.tensor(f["label"][:], dtype=torch.float32)
+            dataset = TensorDataset(protein, drug, label)
+        elif file_ext in ['.pt', '.pth']:
+            checkpoint = torch.load(train_encoder_path)
+            dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
+        else:
+            print("there are no encoder files, please execute feature_save.py")
         
-        return train_load, test_load
+        val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+        return val_loader
+
 
     def get_model(self, model_path):
         model = CMTargetModel(self.configs)
@@ -109,7 +121,7 @@ class CMTargetTrainer():
         
         # [smiles, seq, label]
         pbar = tqdm(self.train_loader, desc="Training", position=0, leave=True, ncols=100)
-        for compound_batch, protein_batch, label_batch in pbar:        
+        for protein_batch, compound_batch, label_batch in pbar:        
 
             # 清空梯度
             self.optimizer.zero_grad()
@@ -163,7 +175,7 @@ class CMTargetTrainer():
                         position=0, leave=True,ncols=100,ascii=False)
             #  smoothing=0, mininterval=1.0,
 
-            for compound_batch, protein_batch, label_batch in loop:
+            for protein_batch, compound_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码
                 logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
                 pred_score = torch.sigmoid(logits)
@@ -233,3 +245,18 @@ class CMTargetTrainer():
         print(f"\n✅ preTraining finished, model has been saved to {output_path}")
         
 
+
+
+
+
+"""
+
+            # 每隔一定轮数, 保存 checkpoint
+            if (i + 1) % self.checkpoint_interval == 0:
+                checkpoint_dir = os.path.join('logs', self.configs['timestamp'], 'checkpoints')
+                os.makedirs(checkpoint_dir, exist_ok=True)
+                checkpoint_path = os.path.join(checkpoint_dir, f"pretrain_checkpoint_epoch{i+1}.pt")
+                self.model.save_model(checkpoint_path)
+                print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
+
+"""

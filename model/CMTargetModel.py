@@ -55,6 +55,9 @@ class CMTargetModel(nn.Module):
         # self.emb_data_pro = nn.Sequential(
         #     nn.Linear(self.pro_token_dim, self.pro_token_dim)
         # )
+        self.protein_embed = nn.Embedding(26, self.pro_token_dim, padding_idx=0)
+        self.drug_embed = nn.Embedding(65, self.drug_token_dim, padding_idx=0)
+
         self.emb_data_pro = nn.Sequential(
             nn.Linear(self.pro_token_dim, self.pro_token_dim),
             nn.LayerNorm(self.pro_token_dim)
@@ -79,7 +82,7 @@ class CMTargetModel(nn.Module):
         self.scorer = Scorer(configs)
 
 
-    def forward(self, protein_features, drug_features):
+    def forward(self, proteins, drugs):
         """
         model的前向传播
 
@@ -98,19 +101,22 @@ class CMTargetModel(nn.Module):
             pro_emb_loss:   protein的特征嵌入损失
             drug_emb_loss:  drug的特征嵌入损失
         """
-        protein_features = protein_features.to(self.device)#16,633,100
-        drug_features = drug_features.to(self.device)#16,222,768
-        
-        # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化→ padding 0, 注意力机制的掩码
-        # protein_mask = (protein_features != 0).float()
-        src_mask = (protein_features.sum(dim=-1) != 0).float()
-        protein_mask = src_mask.unsqueeze(1)  #128,1,633
 
-        protein_encoder_learn = self.emb_data_pro(protein_features) # 16,633,100
-        pro_fused_output = self.sequence_attention_pro(protein_encoder_learn, protein_mask) #128,633,100
+        # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化→ padding 0, 注意力机制的掩码
+        proteins = proteins.to(self.device)#128,1200
+        drugs = drugs.to(self.device) #128,100
         
-        drug_encoder_learn = self.emb_data_drug(drug_features) # 16,222,768
-        drug_fused_output = drug_encoder_learn
+        protein_mask = (proteins != 0).float().unsqueeze(1) #128,1,1200
+        drug_mask = (drugs != 0).float().unsqueeze(1) # 128,1,100
+
+        drugembed = self.drug_embed(drugs) #128,100   128,100,128
+        proteinembed = self.protein_embed(proteins) #128,1200   128,1200,768
+
+        # drugembed = drugembed.permute(0, 2, 1) #128,100,128 → 128,128,100
+        # proteinembed = proteinembed.permute(0, 2, 1)
+
+        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,633,100
+        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask) #128,633,100
 
         # 不要三模态
         contrastive_Loss = 0
