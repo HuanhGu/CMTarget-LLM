@@ -10,10 +10,11 @@ import torch.nn as nn
 
 
 class FeatureExtractor(object):
-    '''
-    对蛋白质和化合物序列 分词+提取tokens特征
-    ## 输出 : [batch_size, token_len, token_feature_dim]
-    '''
+    """
+    pre-extract the feature of protein_sequence using word2vec, 
+    pre-extract the feature of drug_smiles using chemberta.
+    output_dim : [batch_size, token_len, token_feature_dim]
+    """
     def __init__(self):
         # self.configs = configs
         self.feature_dim = 1024
@@ -74,7 +75,7 @@ class FeatureExtractor(object):
             # 将蛋白质序列切分成多个氨基酸
             k = 3
             kmers = [seq[i:i+k] for i in range(len(seq) - k + 1)]
-
+            
             # 查表操作在 CPU 上完成
             vec_array = np.array([self.w2v_model.wv[w] for w in kmers if w in self.w2v_model.wv])
             vec = torch.FloatTensor(vec_array)
