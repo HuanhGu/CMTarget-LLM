@@ -26,22 +26,19 @@ class CMTargetTrainer():
     
     """
     def __init__(self, configs, source_name, model_path):
-        self.configs = configs
-        self.source_name = source_name
-
         self.device = configs['device']
         self.learning_rate = configs['learning_rate_pretrain']
         self.epochs = configs['epochs_train']
         self.batch_size = configs['batch_size']
+        self.patience = configs['patience']
+        self.checkpoint_interval = configs['checkpoint_interval']
 
         self.model = self.get_model(model_path)
 
-
+        print("📕 get pretraining dataloader.")
         train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
         test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
-        print("📕 get pre-train dataloader.")
         self.train_loader = self.get_dataloader(train_encoder_path)
-        print("📕 get pre-test dataloader.")
         self.test_loader = self.get_dataloader(test_encoder_path)
 
         print("some settings...")
@@ -49,12 +46,10 @@ class CMTargetTrainer():
 
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
-        
-        # self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5) #Adam
         self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
                                                 cycle_momentum=False,
-                                                step_size_up=max(1, (len(self.train_loader) // self.batch_size)))
+                                                step_size_up=max(1, (len(self.train_loader)*8*self.batch_size // self.batch_size)))
         
         # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)
         # self.optimizer = optim.Adam(
@@ -80,10 +75,9 @@ class CMTargetTrainer():
             dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
         else:
             print("there are no encoder files, please execute feature_save.py")
-
+        
         val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         return val_loader
-
 
 
     def get_model(self, model_path):
@@ -204,13 +198,8 @@ class CMTargetTrainer():
 
     def train(self, output_path):
         print("🚀 start pre-training...")
-        # drug_list = self.train_loader.dataset.data['compound'].tolist() + self.test_loader.dataset.data['compound'].tolist()
-        # protein_list = self.train_loader.dataset.data['protein'].tolist() + self.test_loader.dataset.data['protein'].tolist()
         logger = TrainLogger(f"Training", self.configs['timestamp'])
-        # logger.update_protein_drug(protein_list, drug_list)
-
-        patience = self.configs['patience']
-        checkpoint_interval = self.configs['checkpoint_interval']
+    
         max_f1 = 0
         wait = 0  # 用于早停计数器
 
@@ -224,7 +213,7 @@ class CMTargetTrainer():
             logger.log_loss(loss, test_loss)
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
-            # 保存最优模型 : f1最大
+            # 保存最优模型 & 早停 : f1最大
             if f1 > max_f1:
                 logger.update_true_score(y_true, y_score)
                 max_f1 = f1
@@ -232,21 +221,26 @@ class CMTargetTrainer():
                 self.model.save_model(output_path)
             else:
                 wait += 1
-                # print(f"pretrain : No improvement in F1 for {wait} epoch(s).")
-            
-            # 早停
-            if wait >= patience:
+            if wait >= self.patience:
                 print(f"📊 Early stopping triggered. Best F1: {max_f1}")
                 break
             
+
+        print(f"\n✅ preTraining finished, model has been saved to {output_path}")
+        
+
+
+
+
+
+"""
+
             # 每隔一定轮数, 保存 checkpoint
-            if (i + 1) % checkpoint_interval == 0:
+            if (i + 1) % self.checkpoint_interval == 0:
                 checkpoint_dir = os.path.join('logs', self.configs['timestamp'], 'checkpoints')
                 os.makedirs(checkpoint_dir, exist_ok=True)
                 checkpoint_path = os.path.join(checkpoint_dir, f"pretrain_checkpoint_epoch{i+1}.pt")
                 self.model.save_model(checkpoint_path)
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
 
-
-        print(f"\n✅ preTraining finished, model has been saved to {output_path}")
-        
+"""
