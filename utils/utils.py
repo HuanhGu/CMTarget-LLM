@@ -25,27 +25,6 @@ class MultiTaskLossWrapper(nn.Module):
             weighted_losses.append(precision * loss + self.log_vars[i])
 
         return sum(weighted_losses)
-    
-
-def get_data_new_path(source_datapath, flag="train"):
-    """根据source_datapath的文件名字, 获取encoder_path和shuffle_path,保持文件名字一致"""
-    # 获取name : 如hit
-    file_name = Path(source_datapath).stem
-
-    os.makedirs("./data/encoder", exist_ok=True)
-    os.makedirs("./data/shuffle", exist_ok=True)
-
-    if(flag == "train"):
-        encoder_path = f"./data/encoder/{file_name}_80pct.pt"
-        shuffle_path = f"./data/shuffle/{file_name}_80pct.csv"
-    elif(flag == "test"):
-        encoder_path = f"./data/encoder/{file_name}_20pct.pt"
-        shuffle_path = f"./data/shuffle/{file_name}_20pct.csv"
-    elif(flag == "pred"):
-        encoder_path = f"./data/encoder/{file_name}_pred.pt"
-        shuffle_path = f"./data/shuffle/{file_name}_pred.csv"
-
-    return encoder_path, shuffle_path
 
 
 class TrainLogger:
