@@ -11,7 +11,7 @@ from model.CMTargetModel import CMTargetModel
 from model.multi_fusion import *
 from model.moe import *
 from utils.metrix import *
-from utils.utils import TrainLogger, PredictLogger, get_data_new_path, MultiTaskLossWrapper
+from utils.utils import TrainLogger, PredictLogger, MultiTaskLossWrapper
 
 from peft import LoraConfig, get_peft_model
 from torch.utils.data import TensorDataset, DataLoader

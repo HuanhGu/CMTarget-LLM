@@ -26,6 +26,7 @@ class CMTargetTrainer():
     
     """
     def __init__(self, configs, source_name, model_path):
+        self.configs = configs
         self.device = configs['device']
         self.learning_rate = configs['learning_rate_pretrain']
         self.epochs = configs['epochs_train']
@@ -38,18 +39,33 @@ class CMTargetTrainer():
         print("📕 get pretraining dataloader.")
         train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
         test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
-        self.train_loader = self.get_dataloader(train_encoder_path)
+        self.train_loader = self.get_dataloader(train_encoder_path) #样本 3599, 29
         self.test_loader = self.get_dataloader(test_encoder_path)
 
         print("some settings...")
-        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
-
+        #-loss
+        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器[只写在这里不可训练，必须加到优化器里]
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5) #Adam
+        #-weights 初始化
+        for p in self.model.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+        weight_p, bias_p = [], []
+        for name, p in self.model.named_parameters():
+            if 'bias' in name:
+                bias_p += [p]
+            else:
+                weight_p += [p]
+
+        self.optimizer = optim.AdamW(
+            [{'params': weight_p, 'weight_decay': 1e-4}, 
+             {'params': bias_p, 'weight_decay': 0}], lr=self.learning_rate)
+        
+        # self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5) #Adam
         self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
                                                 cycle_momentum=False,
-                                                step_size_up=max(1, (len(self.train_loader)*8*self.batch_size // self.batch_size)))
+                                                step_size_up=len(self.train_loader))
         
         # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)
         # self.optimizer = optim.Adam(
@@ -99,7 +115,7 @@ class CMTargetTrainer():
         model = model.to(self.device)
         model.train()
         
-        running_loss = 0.0
+        running_loss = []
         correct = 0
         total = 0
         
@@ -127,7 +143,7 @@ class CMTargetTrainer():
             self.scheduler.step()
             
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
-            running_loss += loss.item()
+            running_loss.append(loss.item())
 
             # 计算准确率
             pred_score = torch.sigmoid(logits)
@@ -135,7 +151,7 @@ class CMTargetTrainer():
             correct += (predicted == label_batch).sum().item()
             total += label_batch.size(0)
 
-        avg_loss = running_loss / len(self.train_loader)  # running_loss / batch_num
+        avg_loss = np.average(running_loss)
         accuracy = correct / total * 100
         print(f"🚂 Train Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
         return avg_loss
@@ -148,7 +164,7 @@ class CMTargetTrainer():
 
         targets, predicts = list(), list()
         threshold = 0.5
-        running_loss = 0.0
+        running_loss = []
 
         with torch.no_grad():
             y_true = []
@@ -169,7 +185,7 @@ class CMTargetTrainer():
                 pred_loss = self.criterion(pred_score, label_batch)
                 
                 loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
-                running_loss += loss.item()
+                running_loss.append(loss.item())
 
                 # pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
                 pred = (pred_score > 0.5).float()  # 将输出转换为0或1
@@ -190,7 +206,7 @@ class CMTargetTrainer():
                 i += 1
                 y_true += label_batch.tolist()
                 y_score += pred_score.tolist()
-            avg_loss = running_loss / len(self.test_loader)
+            avg_loss = np.average(running_loss)
 
         return recall, precision, f1, accuracy, auc, y_true, y_score, avg_loss
 

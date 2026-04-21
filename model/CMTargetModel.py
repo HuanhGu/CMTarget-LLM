@@ -58,10 +58,10 @@ class CMTargetModel(nn.Module):
         self.emb_data_pro = nn.Sequential(
             nn.Linear(self.pro_token_dim, self.pro_token_dim),
             nn.LayerNorm(self.pro_token_dim)
-        )# nn.Dropout(p=0.1)
+        )
         # 化合物经过RobertaModel已经很规范了, 不需要只来一个linear 可学习就行
         self.emb_data_drug = nn.Sequential(
-            nn.Linear(self.drug_token_dim, self.drug_token_dim),
+            nn.Linear(self.drug_token_dim, self.drug_token_dim)
         )
 
         # === 创建 fusion 模型 =====

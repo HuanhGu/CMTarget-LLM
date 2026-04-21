@@ -4,7 +4,7 @@ from torch import nn
 from tqdm import tqdm
 import pandas as pd
 from utils.metrix import calculate_metrics
-from utils.utils import PredictLogger, get_data_new_path
+from utils.utils import PredictLogger
 
 from embedding.dataset_build import FeatureExtractor, collate_fn, DTIDataset
 from embedding.FeatureExtract import *
