@@ -16,14 +16,17 @@ feature_extractor = FeatureExtractor()
 def encoder_and_save(df, encoder_path = "./data/encoder/drugbank_encoder_80pct.h5"):
     # 获取所有化合物序列的最大token数量
     d_max_tokenLen = feature_extractor.get_chemberta_max_length(df['compound'].tolist()) #222
-    p_mean_kmers, p_max_kmers = feature_extractor.get_protein_max_kmers(df['protein'].tolist())
+    # p_mean_kmers, p_max_kmers = feature_extractor.get_protein_max_kmers(df['protein'].tolist())
+    p_max_tokenLen = feature_extractor.get_probert_max_length(df['protein'].tolist())
     # d_max_tokenLen = 512
     # p_max_kmers = 1024
  
     d_loader = DataLoader(DTIDataset(df), batch_size=batch_size, shuffle=True)
     with h5py.File(encoder_path, "w") as f:
-        f.create_dataset("protein", shape=(0, p_mean_kmers, 100), maxshape=(None, p_mean_kmers, 100), 
-                         chunks=(batch_size, p_mean_kmers, 100), dtype='float32',shuffle=True)
+        f.create_dataset("protein", shape=(0, p_max_tokenLen, 1024), maxshape=(None, p_max_tokenLen, 1024), 
+                    chunks=(batch_size, p_max_tokenLen, 100), dtype='float32',shuffle=True)
+        # f.create_dataset("protein", shape=(0, p_mean_kmers, 100), maxshape=(None, p_mean_kmers, 100), 
+                        #  chunks=(batch_size, p_mean_kmers, 100), dtype='float32',shuffle=True)
         f.create_dataset("drug", shape=(0, d_max_tokenLen, 768), maxshape=(None, d_max_tokenLen, 768), 
                          chunks=(batch_size, d_max_tokenLen, 100), dtype='float32',shuffle=True)
         f.create_dataset("label", shape=(0,), maxshape=(None,), chunks=(batch_size * 4,), dtype='int32')
@@ -33,7 +36,8 @@ def encoder_and_save(df, encoder_path = "./data/encoder/drugbank_encoder_80pct.h
 
         for batch_idx, (compound_batch, protein_batch, label_batch) in pbar:
             # 提取特征
-            p_feats = feature_extractor.pro_fea_extract(protein_batch, p_mean_kmers).cpu().numpy()
+            # p_feats = feature_extractor.pro_fea_extract(protein_batch, p_mean_kmers).cpu().numpy()
+            p_feats = feature_extractor.pro_fea_extract_probert(protein_batch, p_max_tokenLen).cpu().numpy()
             d_feats = feature_extractor.drug_fea_extract_chemberta(compound_batch, d_max_tokenLen).cpu().numpy()
             labels = label_batch.cpu().numpy()
             

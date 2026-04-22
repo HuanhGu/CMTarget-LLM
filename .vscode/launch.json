@@ -32,7 +32,6 @@
             "program": "feature_save_hf.py",
             "console": "integratedTerminal",
             "cwd": "/root/gpufree-data/workplace/CMTarget-LLM/",
-            "justMyCode": false,
             "python": "/root/application/miniconda3/envs/cmtarget/bin/python",
             "env":{ "CUDA_VISIBLE_DEVICES": "0"}
         },

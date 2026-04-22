@@ -4,6 +4,7 @@ data/
 z-dustbin/
 z-exectue_logs/
 /embedding/ChemBERTa/
+/embedding/ProBert/
 logs_V0/
 
 
