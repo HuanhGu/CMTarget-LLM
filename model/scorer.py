@@ -66,7 +66,7 @@ class SelfAttentionPooling(nn.Module):
         attn_weights = attn_weights.unsqueeze(-1)
         pooled = torch.sum(x * attn_weights, dim=-2) / (torch.sum(attn_weights, dim=-2) + 1e-6)
         return pooled, attn_weights
-    
+
 class Scorer(torch.nn.Module):
     '''
     给蛋白质和化合物特征向量打分
