@@ -142,7 +142,7 @@ class CMTargetModel(nn.Module):
 
         # 3. 专家编码器 : 不同蛋白和化合物的token用不同专家编码 
         # 专家编码输出, moe的负载均衡损失
-        pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output) #in:[2,501,100] out:[2,501,256]
+        pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output) #in:[2,501,100] out:[2,501,256]  # 这里蛋白质每个token特征长得一模一样！
         drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output) #in:[2,68,78] out:[2,68,256]
         load_balancing_loss = pro_moe_loss + drug_moe_loss     # 275 + 128    
 

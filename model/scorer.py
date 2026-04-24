@@ -67,6 +67,32 @@ class SelfAttentionPooling(nn.Module):
         pooled = torch.sum(x * attn_weights, dim=-2) / (torch.sum(attn_weights, dim=-2) + 1e-6)
         return pooled, attn_weights
 
+class mutil_head_attention(nn.Module):
+    def __init__(self,head = 8,conv=32):
+        super(mutil_head_attention,self).__init__()
+        self.conv = conv
+        self.head = head
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
+        self.d_a = nn.Linear(self.conv * 3, self.conv * 3 * head)
+        self.p_a = nn.Linear(self.conv * 3, self.conv * 3 * head)
+        self.scale = torch.sqrt(torch.FloatTensor([self.conv * 3])).cuda()
+
+    def forward(self, drug, protein):
+        bsz, d_ef,d_il = drug.shape  #128,633,256
+        bsz, p_ef, p_il = protein.shape  #12,222,256
+        drug_att = self.relu(self.d_a(drug.permute(0, 2, 1))).view(bsz,self.head,d_il,d_ef)
+        protein_att = self.relu(self.p_a(protein.permute(0, 2, 1))).view(bsz,self.head,p_il,p_ef)
+        interaction_map = torch.mean(self.tanh(torch.matmul(drug_att, protein_att.permute(0, 1, 3, 2)) / self.scale),1)
+        Compound_atte = self.tanh(torch.sum(interaction_map, 2)).unsqueeze(1) #128,85,1179 → 128,1,85
+        Protein_atte = self.tanh(torch.sum(interaction_map, 1)).unsqueeze(1)    #128,85,1179 → 128,1,1179
+        drug = drug * Compound_atte  #128,96,85
+        protein = protein * Protein_atte #128,96,1179
+        return drug,protein
+    
+
+
+
 class Scorer(torch.nn.Module):
     '''
     给蛋白质和化合物特征向量打分
@@ -88,9 +114,16 @@ class Scorer(torch.nn.Module):
 
         self.fea_dim = 256  # pro_dim
 
-        self.user_pooling = SelfAttentionPooling(self.pro_dim, self.emb_dim)
-        self.item_pooling = SelfAttentionPooling(self.drug_dim, self.emb_dim)
+        # self.user_pooling = SelfAttentionPooling(self.pro_dim, self.emb_dim)
+        # self.item_pooling = SelfAttentionPooling(self.drug_dim, self.emb_dim)
 
+
+        self.attention = mutil_head_attention(head = 8, conv=32)
+        # self.attention = mutil_head_attention(head = self.head_num, conv=self.conv)
+        # self.Drug_max_pool = nn.MaxPool1d(self.drug_MAX_LENGH-self.drug_kernel[0]-self.drug_kernel[1]-self.drug_kernel[2]+3)
+        # self.Protein_max_pool = nn.MaxPool1d(self.protein_MAX_LENGH - self.protein_kernel[0] - self.protein_kernel[1] - self.protein_kernel[2] + 3)
+        self.Drug_max_pool = nn.MaxPool1d(32)
+        self.Protein_max_pool = nn.MaxPool1d(32)
 
         if configs['score_way'] == 'MF':
             self.score = MF(self.fea_dim)
@@ -100,12 +133,20 @@ class Scorer(torch.nn.Module):
             self.score = Cosine(self.fea_dim)
 
     def forward(self, pro_feat, drug_feat):
-        "in:[2,501,256]  [2,68,256]"
+        "in:[128,633,256]  [128,222,256]"
         "out:[2]"
 
+        # 1. 使用多头注意力，将蛋白质和化合物进行特征交互
+        pro_feat_mutual ,drug_feat_mutual = self.attention(pro_feat, drug_feat)
+        drug_pool_feature = self.Drug_max_pool(drug_feat_mutual).squeeze(2)
+        prot_pool_feature = self.Protein_max_pool(pro_feat_mutual).squeeze(2)
+        
+
+        '''
         # 1. 将输入映射到同一维度
         prot_pool_feature, _ = self.user_pooling(pro_feat)  # [2,256]
         drug_pool_feature, _ = self.item_pooling(drug_feat) #[2,256]
+        '''
         
         # 2. 预测打分
         output = self.score(prot_pool_feature, drug_pool_feature) #[2]
