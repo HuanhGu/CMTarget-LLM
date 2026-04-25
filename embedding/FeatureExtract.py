@@ -22,28 +22,25 @@ class FeatureExtractor(object):
 
         # 1. 预加载模型，避免在循环中重复加载
         print("Loading ChemBERTa model...")
+        self.w2v_model = Word2Vec.load("./embedding/word2vec_30.model")
         
         local_model_path = "/root/gpufree-data/workplace/CMTarget-LLM/embedding/ChemBERTa/"
         self.drug_tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
         self.drug_model = AutoModel.from_pretrained(local_model_path, local_files_only=True).to(self.device)
         self.drug_model.eval()
 
-        self.pro_tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False, local_files_only=True)
-        self.pro_model = AutoModel.from_pretrained("Rostlab/prot_bert", local_files_only=True).to(self.device)
-        self.pro_model.eval()
-    
+        # self.pro_tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False, local_files_only=True)
+        # self.pro_model = AutoModel.from_pretrained("Rostlab/prot_bert", local_files_only=True).to(self.device)
+        # self.pro_model.eval()
 
+
+    # ================蛋白质probert==================
     def pro_fea_extract_probert(self, pro_sequence, p_max_tokenLen):
-        # padding : pad_to_max_length
         inputs = self.pro_tokenizer(pro_sequence, return_tensors="pt", 
                                      padding='max_length', max_length=p_max_tokenLen,
                                      truncation=True).to(self.device) # input_ids : [batch, d_max_tokenLen] || [8, 222]
-        # mask = inputs['attention_mask'].cpu()
         with torch.no_grad():
             outputs = self.pro_model(**inputs)
-        
-        # 结果转回 CPU 释放显存   
-        # drugs = outputs.pooler_output [batch, 768]
         proteins = outputs.last_hidden_state.cpu() # [batch, d_max_tokenLen, 78] [8,222,768]  || [8, 72, 768], [8, 83, 768]
         return proteins
     
@@ -51,52 +48,41 @@ class FeatureExtractor(object):
             all_pro_smiles_spaced = [" ".join(list(seq)) for seq in all_pro_smiles]
             all_inputs = self.pro_tokenizer(all_pro_smiles_spaced)
             # 获取所有编码后的input_ids的长度，取最大值
-            # max_prolen_all = max([len(x) for x in all_inputs['input_ids']])
             mean_prolen_all = np.median([len(x) for x in all_inputs['input_ids']])
             mean_prolen_all = int(mean_prolen_all)
             print(f"pro_smiles 的 全局中位数 token 长度为: {mean_prolen_all}")
-
             return mean_prolen_all
 
+
+
+    # ================化合物ChemBERTa==================
     # https://github.com/miservilla/ChemBERTa
     def drug_fea_extract_chemberta(self, drug_sequence, d_max_tokenLen):
+        """ 提取一个batch化合物序列的特征编码tensor
+        输入：drug序列list : [batch_size, ]个 list of SMILES
+        输出：drug序列的张量嵌入list : [batch_size, d_max_token_num, Hidden_Size]
         """
-        提取一个batch化合物序列的特征编码tensor
-
-        输入：
-            drug序列list : [batch_size, ]个 list of SMILES
-        输出：
-            drug序列的张量嵌入list : [batch_size, d_max_token_num, Hidden_Size]
-        """
-        # padding : pad_to_max_length
         inputs = self.drug_tokenizer(drug_sequence, return_tensors="pt", 
                                      padding='max_length', max_length=d_max_tokenLen,
                                      truncation=True).to(self.device) # input_ids : [batch, d_max_tokenLen] || [8, 222]
-        # mask = inputs['attention_mask'].cpu()
         with torch.no_grad():
             outputs = self.drug_model(**inputs)
-        
-        # 结果转回 CPU 释放显存   
         # drugs = outputs.pooler_output [batch, 768]
         drugs = outputs.last_hidden_state.cpu() # [batch, d_max_tokenLen, 78] [8,222,768]  || [8, 72, 768], [8, 83, 768]
         return drugs
     
-
     def get_chemberta_max_length(self, all_drug_smiles):
         all_inputs = self.drug_tokenizer(all_drug_smiles, truncation=True)
         # 获取所有编码后的input_ids的长度，取最大值
         max_druglen_all = max([len(x) for x in all_inputs['input_ids']])
         print(f"drug_smiles 的 全局最大 token 长度为: {max_druglen_all}")
-
         return max_druglen_all
 
 
 
-    # CMTarget：提取化合物序列的特征
-    # generate drug feature with MorganFingerprint
+    # ================化合物MorganFingerprint==================
     def drug_fea_extract(self, drug_sequence):  
         drugs = []
-
         # 提取1个化合物序列的特征
         if Chem.MolFromSmiles(drug_sequence):
             mol = Chem.MolFromSmiles(drug_sequence)
@@ -105,19 +91,62 @@ class FeatureExtractor(object):
             fingerprint = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits)
             fingerprint_feature = torch.tensor(fingerprint, dtype=torch.float32).unsqueeze(0)
         else:
-            # print(str(drug))
-            # print("Above smile transforms to fingerprint error!!!")
-            # print("Please remove!")
             fingerprint_feature = torch.zeros(self.feature_dim, dtype=torch.float32).unsqueeze(0)
-
         drugs.append(fingerprint_feature)
-
-        
         return drugs
         # drug_feature_lst1 = FeatureExtractor.drug_fea_extract(drug) # fingerprint提取 [1024,];
 
 
+    # ====================蛋白质W2C=======================
+    def get_protein_embedding(self, model,protein):
+        """get protein embedding,infer a list of 3-mers to (num_word,100) matrix"""
+        vec = np.zeros((len(protein), 100))
+        i = 0
+        for word in protein:
+            vec[i, ] = model.wv[word]
+            i += 1
+        return vec
+
+    def pro_fea_extract(self, pro_sequence, p_max_kmers):
+        '''
+        提取一个batch蛋白质序列的特征编码tensor
+        输入 : 蛋白质序列list : [batch_size, ]个sequence
+        输出 : 蛋白质序列的张量嵌入list : [batch_size, (token_num), Hidden_Size ]
+        '''
+        proteins = []
+        # 假设每个 k-mer 的向量维度是 embedding_dim (比如 100)
+        embedding_dim = self.w2v_model.vector_size
+        for seq in pro_sequence:
+            k = 3
+            kmers = [seq[i:i+k] for i in range(len(seq) - k + 1)]
+            vec_array = np.array([self.w2v_model.wv[w] for w in kmers if w in self.w2v_model.wv])
+            vec = torch.FloatTensor(vec_array)
+            # 4. 核心填充/截断逻辑
+            curr_len = vec.size(0)
+            if curr_len < p_max_kmers:
+                padded_v = torch.zeros((p_max_kmers, embedding_dim))# 填充：[目标长度, 向量维度]
+                padded_v[:curr_len, :] = vec
+            else:
+                padded_v = vec[:p_max_kmers, :]  # 截断
+            proteins.append(padded_v) #[[501,100], [500,100]]
+        proteins_tensor = torch.stack(proteins)  #[Batch_Size, p_max_kmers, embedding_dim]
+        return proteins_tensor # [8,619,100]
     
+
+    def get_protein_max_kmers(self, proteins):
+        "获取一批蛋白质序列划分为氨基酸后的最大长度"
+        p_kmers = []
+        for seq in proteins:
+            k = 3
+            kmers = [seq[i:i+k] for i in range(len(seq) - k + 1)]
+            p_kmers.append(len(kmers))
+        p_median_kmers = int(np.median(p_kmers))
+        p_max_kmers = int(np.max(p_kmers))
+        print(f"protein序列 的 全局中位数 氨基酸 数量为: {p_median_kmers}")
+        print(f"protein序列 的 全局最大 氨基酸 数量为: {p_max_kmers}")
+        return p_median_kmers, p_max_kmers
+    
+
 
 
 

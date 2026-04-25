@@ -1,0 +1,21 @@
+{
+    "batch_size": 128,
+    "checkpoint_interval": 10,
+    "emb": 512,
+    "emb_align_way": "truncation_max_tokenLen",
+    "epochs_train": 300,
+    "epochs_tune": 200,
+    "learning_rate_pretrain": 1e-05,
+    "learning_rate_tune": 0.05,
+    "model": "CMTarget",
+    "model_path": "",
+    "patience": 30,
+    "score_way": "Cosine",
+    "source_name": "hit",
+    "target_name": "drugbank",
+    "task": "train",
+    "timestamp": "20260425_140706",
+    "token_num_pro": "mean",
+    "token_num_drug": "max",
+    "remark": "pRelu"
+}

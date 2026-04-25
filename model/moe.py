@@ -83,12 +83,10 @@ class BasicMOE(nn.Module):
         expert_weight = self.gate(x)  # shape 是 (batch, token_num, expert_number) (2，501, 3)
         expert_weight = F.softmax(expert_weight, dim=-1) # (batch, expert_number)
         
-        # --- 计算负载均衡损失 (Auxiliary Loss) ---
+        # --- 负载均衡损失 (Auxiliary Loss) ---
         # f: 每个专家获得的权重均值 (Importance), 每个token被哪个专家选中
         f = expert_weight.view(-1, self.expert_number).mean(0) # [501, 3] 
-        # P: 每个专家被选中的概率均值 (实际上在 Dense MoE 中 P = f)
-        # 在 Sparse MoE 中，P 通常是样本被分配到该专家的频率
-        # 这里为了演示通用公式：Loss = N * sum(f_i * P_i)
+        # Loss = N * sum(f_i * P_i)
         moe_loss = self.expert_number * torch.sum(f * f) # 每个专家被分配的概率
         
 
@@ -97,7 +95,7 @@ class BasicMOE(nn.Module):
             expert(x).unsqueeze(2) for expert in self.experts
         ]  # unsequeeze(1)后,变成(batch, token_num, 1, feature_out) [2,501,1,256]*3
 
-        # 拼接所有专家输出 : concat 起来 (batch, token_num, expert_number, feature_out)   (2,2,3)
+        # concat 起来 (batch, token_num, expert_number, feature_out)   (2,2,3)
         expert_output = torch.cat(expert_out_list, dim=2) #[2,501,3,256]
         # print(expert_output.size())
 
