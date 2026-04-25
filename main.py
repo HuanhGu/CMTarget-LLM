@@ -29,28 +29,24 @@ def prepare():
     parser.add_argument('-bs', '--batch_size', type = int, default = 128)
 
     parser.add_argument('--checkpoint_interval', type=int, default=10)
-    parser.add_argument('-emb', '--embedding_dim', type=int, default=512)
-    parser.add_argument('--emb_align_way', type=str, default='truncation_max_tokenLen')# interpolate
-
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 1e-5)
+    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 1e-4)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.05)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
     
     parser.add_argument('--patience', type = int, default=30) 
-    parser.add_argument('-scW', '--score_way', type=str, default='Cosine', 
+    parser.add_argument('-score', '--score_way', type=str, default='Cosine', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
-    parser.add_argument('--source_name', type = str, default="hit")#drugbank
-    parser.add_argument('--target_name', default='drugbank')
-
-    parser.add_argument('--token_num_pro', type = str, default='mean')#1024
-    parser.add_argument('--token_num_drug', type = str, default='max')#512
+    parser.add_argument('-s', '--source_name', type = str, default="hit")#drugbank
+    parser.add_argument('-t', '--target_name', default='drugbank')
+    
+    parser.add_argument('--token_dim_pro', type = int, default='100')#probert=1024, w2c=100
+    parser.add_argument('--token_dim_drug', type = int, default='768')#chemberta=768
     parser.add_argument('--task', type=str, default = "train", 
                         help="choose the stage : train, predict")
-    # parser.add_argument('--timestamp', type=str, default = "001")
 
     parser.add_argument('-m', '--remark', type=str, default = "add multi-att to scorer, and use drugbank to pretrain.")
  
@@ -59,8 +55,7 @@ def prepare():
     config = {}
     config['batch_size'] = args.batch_size
     config['checkpoint_interval'] = args.checkpoint_interval
-    config['emb'] = args.embedding_dim
-    config['emb_align_way'] = args.emb_align_way
+
     config['epochs_train'] = args.epochs_train  
     config['epochs_tune'] = args.epochs_tune 
     config['learning_rate_pretrain'] = args.learning_rate_pretrain
@@ -76,8 +71,8 @@ def prepare():
     config['target_name'] = args.target_name
     config['task'] = args.task
     config['timestamp'] = timestamp
-    config['token_num_pro'] = args.token_num_pro
-    config['token_num_drug'] = args.token_num_drug
+    config['token_dim_pro'] = args.token_dim_pro
+    config['token_dim_drug'] = args.token_dim_drug
 
     config['remark'] = args.remark
     

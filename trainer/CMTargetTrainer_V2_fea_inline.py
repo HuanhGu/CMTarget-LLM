@@ -113,7 +113,7 @@ class CMTargetTrainer():
         val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
         return val_loader
 
-
+    
     def get_model(self, model_path):
         model = CMTargetModel(self.configs)
         if model_path != '':
@@ -123,8 +123,6 @@ class CMTargetTrainer():
     
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
-        "量级 : [27+2+0.68]"
-        # 19 + 2 + 0.6930[27+2+0.68]
         # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
         loss = pred_loss  # 量级：0~10s
         return loss

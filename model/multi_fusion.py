@@ -5,6 +5,53 @@ from torch.nn.functional import scaled_dot_product_attention
 # import numpy as np
 
 
+# 定义自注意力机制
+class SelfAttention(nn.Module):
+    def __init__(self, d_model, d_k, d_v):
+        super(SelfAttention, self).__init__()
+        """  初始化selfAttention
+        d_model : 输入维度
+        d_k : Query / Key 的维度
+        d_v : Value 的维度
+        """
+        self.d_model = d_model
+        self.d_k = d_k
+        self.d_v = d_v
+
+        self.W_Q = nn.Linear(d_model, d_k)  
+        self.W_K = nn.Linear(d_model, d_k)
+        self.W_V = nn.Linear(d_model, d_v)
+    
+    def forward(self, x, mask = None):
+        """ 前向传播
+        参数：
+            x : (seq_len, d_model)
+            mask : 可选的掩码矩阵
+        返回:
+            output : 输出序列(seq_len, d_v)
+            attention_weights : 注意力权重矩阵
+        """
+        # 线性投影
+        # Q = np.dot(x, self.W_Q) #(seq_len, d_k)
+        # K = np.dot(x, self.W_K) #(seq_len, d_k)
+        # V = np.dot(x, self.W_V) #(seq_len, d_v)
+
+        Q = self.W_Q(x) #(seq_len, d_k)
+        K = self.W_K(x) #(seq_len, d_k)
+        V = self.W_V(x) #(seq_len, d_v)
+
+        # 计算注意力
+        output= scaled_dot_product_attention(Q, K, V, mask) #128,633,100
+
+        return output
+
+
+
+
+
+
+
+
 # 实现Scaled Dot-Product Attention
 ''' S
 
@@ -43,59 +90,6 @@ def scaled_dot_product_attention(Q, K, V, mask=None):
     
     return output, attention_weights
 '''
-
-# 定义自注意力机制
-class SelfAttention(nn.Module):
-    def __init__(self, d_model, d_k, d_v):
-        super(SelfAttention, self).__init__()
-        """
-        初始化selfAttention
-
-        d_model : 输入维度
-        d_k : Query / Key 的维度
-        d_v : Value 的维度
-
-        """
-        self.d_model = d_model
-        self.d_k = d_k
-        self.d_v = d_v
-
-        # 初始化权重矩阵（使用Xavier初始化）
-        # scale = np.sqrt(2.0 / (d_model + d_k))
-        # self.W_Q = np.random.randn(d_model, d_k) * scale
-        # self.W_K = np.random.randn(d_model, d_k) * scale
-        # self.W_V = np.random.randn(d_model, d_v) * scale
-        self.W_Q = nn.Linear(d_model, d_k)  #
-        self.W_K = nn.Linear(d_model, d_k)
-        self.W_V = nn.Linear(d_model, d_v)
-    
-    def forward(self, x, mask = None):
-        """
-        前向传播
-
-        参数：
-            x : 输入序列(seq_len, d_model)
-            mask : 可选的掩码矩阵
-
-        返回:
-            output : 输出序列(seq_len, d_v)
-            attention_weights : 注意力权重矩阵
-
-        """
-        # 线性投影
-        # Q = np.dot(x, self.W_Q) #(seq_len, d_k)
-        # K = np.dot(x, self.W_K) #(seq_len, d_k)
-        # V = np.dot(x, self.W_V) #(seq_len, d_v)
-
-        Q = self.W_Q(x) #(seq_len, d_k)
-        K = self.W_K(x) #(seq_len, d_k)
-        V = self.W_V(x) #(seq_len, d_v)
-
-        # 计算注意力
-        output= scaled_dot_product_attention(Q, K, V, mask) #128,633,100
-
-        return output
-
 
 
 

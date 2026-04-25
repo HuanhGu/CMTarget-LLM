@@ -47,6 +47,7 @@ class CMTargetTrainer():
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器[只写在这里不可训练，必须加到优化器里]
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
+
         #-weights 初始化
         for p in self.model.parameters():
             if p.dim() > 1:
@@ -120,7 +121,7 @@ class CMTargetTrainer():
         total = 0
         
         # [smiles, seq, label]
-        pbar = tqdm(self.train_loader, desc="Training", position=0, leave=True, ncols=100)
+        pbar = tqdm(self.train_loader, desc="Training", leave=True, ncols=100)
         for protein_batch, compound_batch, label_batch in pbar:        
 
             # 清空梯度
@@ -140,7 +141,7 @@ class CMTargetTrainer():
             # 反向传播和优化
             loss.backward() #计算梯度（找准方向）
             self.optimizer.step() #更新参数
-            self.scheduler.step()
+            # self.scheduler.step()
             
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
             running_loss.append(loss.item())

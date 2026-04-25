@@ -70,7 +70,7 @@ class SelfAttentionPooling(nn.Module):
 class mutil_head_attention(nn.Module):
     def __init__(self,head = 8,conv=32):
         super(mutil_head_attention,self).__init__()
-        self.conv = 256
+        self.conv = conv #256
         self.head = head
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
@@ -108,24 +108,13 @@ class Scorer(torch.nn.Module):
     输出: 
         output:最终得分 [batch_size]
     '''
-    def __init__(self, configs):
+    def __init__(self, configs, moe_emb_dim):
         super().__init__()
-
-        self.pro_dim = 256   #pro_dim
-        self.drug_dim = 256   #drug_dim
-        self.emb_dim = 128    #emb_dim
-
-        self.fea_dim = 256  # pro_dim
-
-        # self.user_pooling = SelfAttentionPooling(self.pro_dim, self.emb_dim)
-        # self.item_pooling = SelfAttentionPooling(self.drug_dim, self.emb_dim)
-
-
-        self.attention = mutil_head_attention(head = 8, conv=256)
-        # self.attention = mutil_head_attention(head = self.head_num, conv=self.conv)
-        # self.Drug_max_pool = nn.MaxPool1d(self.drug_MAX_LENGH-self.drug_kernel[0]-self.drug_kernel[1]-self.drug_kernel[2]+3)
-        # self.Protein_max_pool = nn.MaxPool1d(self.protein_MAX_LENGH - self.protein_kernel[0] - self.protein_kernel[1] - self.protein_kernel[2] + 3)
-        # self.Drug_max_pool = nn.MaxPool1d(256)
+        self.fea_dim = moe_emb_dim  # pro_dim, drug_dim, 256
+        # self.user_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
+        # self.item_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
+        
+        self.attention = mutil_head_attention(head = 8, conv=self.fea_dim)
         self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
         self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
 
@@ -144,7 +133,6 @@ class Scorer(torch.nn.Module):
         pro_feat_mutual ,drug_feat_mutual = self.attention(pro_feat, drug_feat)
         drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
         prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        
 
         '''
         # 1. 将输入映射到同一维度
