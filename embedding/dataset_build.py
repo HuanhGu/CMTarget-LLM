@@ -16,7 +16,7 @@ def collate_fn(batch):
     drugs_pad = pad_sequence(drugs, batch_first=True)
     proteins_pad = pad_sequence(proteins, batch_first=True)
     labels_tensor = torch.stack(labels)
-    return drugs_pad, proteins_pad, labels_tensor, smiles, sequences
+    return proteins_pad, drugs_pad, labels_tensor, smiles, sequences
 
 
 class DTIDataset(Dataset):

@@ -106,8 +106,20 @@ class FeatureExtractor(object):
             vec[i, ] = model.wv[word]
             i += 1
         return vec
+    def get_protein_max_kmers(self, proteins):
+        "获取一批蛋白质序列划分为氨基酸后的最大长度"
+        p_kmers = []
+        for seq in proteins:
+            k = 3
+            kmers = [seq[i:i+k] for i in range(len(seq) - k + 1)]
+            p_kmers.append(len(kmers))
+        p_median_kmers = int(np.median(p_kmers))
+        p_max_kmers = int(np.max(p_kmers))
+        print(f"protein序列 的 全局中位数 氨基酸 数量为: {p_median_kmers}")
+        print(f"protein序列 的 全局最大 氨基酸 数量为: {p_max_kmers}")
+        return p_median_kmers, p_max_kmers
 
-    def pro_fea_extract(self, pro_sequence, p_max_kmers):
+    def pro_fea_extract_w2c(self, pro_sequence, p_max_kmers):
         '''
         提取一个batch蛋白质序列的特征编码tensor
         输入 : 蛋白质序列list : [batch_size, ]个sequence
@@ -133,18 +145,7 @@ class FeatureExtractor(object):
         return proteins_tensor # [8,619,100]
     
 
-    def get_protein_max_kmers(self, proteins):
-        "获取一批蛋白质序列划分为氨基酸后的最大长度"
-        p_kmers = []
-        for seq in proteins:
-            k = 3
-            kmers = [seq[i:i+k] for i in range(len(seq) - k + 1)]
-            p_kmers.append(len(kmers))
-        p_median_kmers = int(np.median(p_kmers))
-        p_max_kmers = int(np.max(p_kmers))
-        print(f"protein序列 的 全局中位数 氨基酸 数量为: {p_median_kmers}")
-        print(f"protein序列 的 全局最大 氨基酸 数量为: {p_max_kmers}")
-        return p_median_kmers, p_max_kmers
+    
     
 
 

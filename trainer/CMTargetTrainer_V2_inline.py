@@ -32,24 +32,18 @@ class CMTargetTrainer():
         self.batch_size = configs['batch_size']
         self.patience = configs['patience']
         self.checkpoint_interval = configs['checkpoint_interval']
+        self.threshold = 0.5
 
         self.model = self.get_model(model_path)
         self.feature_extractor = FeatureExtractor()
         self.d_max_tokenLen, self.p_max_tokenLen, self.train_loader, self.test_loader = self.get_dataloader_seq(source_name)
-
-        """
-        print("📕 get pretraining dataloader.")
-        train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
-        test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
-        self.train_loader = self.get_dataloader(train_encoder_path) #样本 3599, 29
-        self.test_loader = self.get_dataloader(test_encoder_path)
-        """
 
         print("some settings...")
         #-loss
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器[只写在这里不可训练，必须加到优化器里]
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
+        
         #-weights 初始化
         for p in self.model.parameters():
             if p.dim() > 1:
@@ -86,7 +80,8 @@ class CMTargetTrainer():
         d_df = pd.read_csv(csv_path) 
         # 获取所有化合物序列的最大token数量
         d_max_tokenLen = self.feature_extractor.get_chemberta_max_length(d_df['compound'].tolist()) #222
-        p_max_tokenLen = self.feature_extractor.get_probert_max_length(d_df['protein'].tolist()) #506
+        # p_max_tokenLen = self.feature_extractor.get_probert_max_length(d_df['protein'].tolist()) #506
+        p_max_tokenLen, p_max_kmers = self.feature_extractor.get_protein_max_kmers(d_df['protein'].tolist())
 
         train_df, test_df = train_test_split(d_df, test_size=0.2, random_state=0, shuffle=True)
         train_loader = DataLoader(DTIDataset(train_df), batch_size=self.batch_size, shuffle=True)
@@ -94,26 +89,16 @@ class CMTargetTrainer():
         
         return d_max_tokenLen, p_max_tokenLen, train_loader, test_loader
     
-    def get_dataloader(self, train_encoder_path):
-        # 判断文件类型
-        file_ext = os.path.splitext(train_encoder_path)[-1].lower()
+    def get_pre_encoder_fea(self, proteins, compounds, labels):
+        # 获取输入数据的bert特征(不可训练)
+        # protein_batch = self.feature_extractor.pro_fea_extract_probert(proteins, self.p_max_tokenLen).to(self.device)
+        protein_batch = self.feature_extractor.pro_fea_extract_w2c(proteins, self.p_max_tokenLen).to(self.device)
+        compound_batch = self.feature_extractor.drug_fea_extract_chemberta(compounds, self.d_max_tokenLen).to(self.device)
+        label_batch = labels.to(self.device)
+        return protein_batch, compound_batch, label_batch
 
-        if file_ext in ['.h5', '.hdf5']:
-            with h5py.File(train_encoder_path, "r") as f:
-                protein = torch.tensor(f["protein"][:], dtype=torch.float32)
-                drug = torch.tensor(f["drug"][:], dtype=torch.float32)
-                label = torch.tensor(f["label"][:], dtype=torch.float32)
-            dataset = TensorDataset(protein, drug, label)
-        elif file_ext in ['.pt', '.pth']:
-            checkpoint = torch.load(train_encoder_path)
-            dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
-        else:
-            print("there are no encoder files, please execute feature_save.py")
-        
-        val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
-        return val_loader
 
-    
+   
     def get_model(self, model_path):
         model = CMTargetModel(self.configs)
         if model_path != '':
@@ -137,11 +122,8 @@ class CMTargetTrainer():
         
         # [smiles, seq, label]
         pbar = tqdm(self.train_loader, desc="Training", position=0, leave=True, ncols=100)
-        for proteins, compounds, labels in pbar:        
-            # 获取输入数据的bert特征(不可训练)
-            protein_batch = self.feature_extractor.pro_fea_extract_probert(proteins, self.p_max_tokenLen).to(self.device)
-            compound_batch = self.feature_extractor.drug_fea_extract_chemberta(compounds, self.d_max_tokenLen).to(self.device)
-            label_batch = labels.to(self.device)
+        for compounds, proteins, labels in pbar:        
+            protein_batch, compound_batch, label_batch = self.get_pre_encoder_fea(proteins, compounds, labels)
             # 清空梯度
             self.optimizer.zero_grad()
 
@@ -158,14 +140,14 @@ class CMTargetTrainer():
             # 反向传播和优化
             loss.backward() #计算梯度（找准方向）
             self.optimizer.step() #更新参数
-            self.scheduler.step()
+            # self.scheduler.step()
             
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
             running_loss.append(loss.item())
 
             # 计算准确率
             pred_score = torch.sigmoid(logits)
-            predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
+            predicted = (pred_score > self.threshold).float()  # 将输出转换为0或1
             correct += (predicted == label_batch).sum().item()
             total += label_batch.size(0)
 
@@ -181,7 +163,6 @@ class CMTargetTrainer():
         evl_model.eval()
 
         targets, predicts = list(), list()
-        threshold = 0.5
         running_loss = []
 
         with torch.no_grad():
@@ -193,20 +174,18 @@ class CMTargetTrainer():
                         position=0, leave=True,ncols=100,ascii=False)
             #  smoothing=0, mininterval=1.0,
 
-            for protein_batch, compound_batch, label_batch in loop:
+            for compounds, proteins, labels in loop:
+                protein_batch, compound_batch, label_batch = self.get_pre_encoder_fea(proteins, compounds, labels)
+                
                 # 预测结果：三种模态特征对齐融合+MoE编码
                 logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
                 pred_score = torch.sigmoid(logits)
-                pred_score = pred_score.cpu()
-                # predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
 
                 pred_loss = self.criterion(pred_score, label_batch)
-                
                 loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
                 running_loss.append(loss.item())
 
-                # pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
-                pred = (pred_score > 0.5).float()  # 将输出转换为0或1
+                pred = (pred_score > self.threshold).float()  # 将输出转换为0或1
                 # 预测list 和  真值list
                 targets.extend(label_batch.tolist())
                 predicts.extend(pred.tolist())
