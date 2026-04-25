@@ -121,7 +121,7 @@ class Scorer(torch.nn.Module):
         # self.item_pooling = SelfAttentionPooling(self.drug_dim, self.emb_dim)
 
 
-        self.attention = mutil_head_attention(head = 8, conv=32)
+        self.attention = mutil_head_attention(head = 8, conv=256)
         # self.attention = mutil_head_attention(head = self.head_num, conv=self.conv)
         # self.Drug_max_pool = nn.MaxPool1d(self.drug_MAX_LENGH-self.drug_kernel[0]-self.drug_kernel[1]-self.drug_kernel[2]+3)
         # self.Protein_max_pool = nn.MaxPool1d(self.protein_MAX_LENGH - self.protein_kernel[0] - self.protein_kernel[1] - self.protein_kernel[2] + 3)

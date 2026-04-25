@@ -34,17 +34,17 @@ def prepare():
 
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 0.0001)
+    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 1e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.05)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
     
-    parser.add_argument('--patience', type = int, default=10) 
-    parser.add_argument('-scW', '--score_way', type=str, default='GMF', 
+    parser.add_argument('--patience', type = int, default=30) 
+    parser.add_argument('-scW', '--score_way', type=str, default='Cosine', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
     parser.add_argument('--source_name', type = str, default="hit")#drugbank
-    parser.add_argument('--target_name', default='hit')
+    parser.add_argument('--target_name', default='drugbank')
 
     parser.add_argument('--token_num_pro', type = str, default='mean')#1024
     parser.add_argument('--token_num_drug', type = str, default='max')#512
@@ -52,7 +52,7 @@ def prepare():
                         help="choose the stage : train, predict")
     # parser.add_argument('--timestamp', type=str, default = "001")
 
-    parser.add_argument('-m', '--remark', type=str, default = "add Linear in CMTargetModel for encoded data.")
+    parser.add_argument('-m', '--remark', type=str, default = "add multi-att to scorer, and use drugbank to pretrain.")
  
     args = parser.parse_args()
 

@@ -90,7 +90,7 @@ class BasicMOE(nn.Module):
         # 在 Sparse MoE 中，P 通常是样本被分配到该专家的频率
         # 这里为了演示通用公式：Loss = N * sum(f_i * P_i)
         moe_loss = self.expert_number * torch.sum(f * f) # 每个专家被分配的概率
-
+        
 
         # B. 获得所有专家输出
         expert_out_list = [

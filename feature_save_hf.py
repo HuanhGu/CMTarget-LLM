@@ -53,7 +53,7 @@ def encoder_and_save(df, encoder_path = "./data/encoder/drugbank_encoder_80pct.h
 if __name__ == '__main__':
 
     # dataname = 'drugbank'  #'dti2' 'drugbank' 'hit'
-    dataname = 'hit_bert'
+    dataname = 'drugbank'
     
     # 1. 读取序列数据集, 并划分
     csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
