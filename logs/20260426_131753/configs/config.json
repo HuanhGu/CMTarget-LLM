@@ -1,0 +1,19 @@
+{
+    "batch_size": 128,
+    "checkpoint_interval": 10,
+    "epochs_train": 300,
+    "epochs_tune": 200,
+    "learning_rate_pretrain": 0.0001,
+    "learning_rate_tune": 0.05,
+    "model": "CMTarget",
+    "model_path": "",
+    "patience": 30,
+    "score_way": "Cosine",
+    "source_name": "hit",
+    "target_name": "drugbank",
+    "task": "train",
+    "timestamp": "20260426_131753",
+    "token_dim_pro": 512,
+    "token_dim_drug": 768,
+    "remark": "bert_emb"
+}

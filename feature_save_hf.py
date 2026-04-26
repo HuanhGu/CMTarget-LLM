@@ -1,6 +1,7 @@
 import h5py
-# from embedding.dataset import *
+from embedding.dataset_build import *
 from embedding.FeatureExtract import FeatureExtractor
+from tqdm import tqdm
 
 import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset
@@ -16,8 +17,8 @@ feature_extractor = FeatureExtractor()
 def encoder_and_save(df, encoder_path = "./data/encoder/drugbank_encoder_80pct.h5"):
     # 获取所有化合物序列的最大token数量
     d_max_tokenLen = feature_extractor.get_chemberta_max_length(df['compound'].tolist()) #222
-    p_mean_kmers, p_max_kmers = feature_extractor.get_protein_max_kmers(df['protein'].tolist())
-    # p_max_tokenLen = feature_extractor.get_probert_max_length(df['protein'].tolist())
+    # p_mean_kmers, p_max_kmers = feature_extractor.get_protein_max_kmers(df['protein'].tolist())
+    p_max_tokenLen = feature_extractor.get_probert_max_length(df['protein'].tolist())
     # d_max_tokenLen = 512
     # p_max_kmers = 1024
  

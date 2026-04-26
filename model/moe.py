@@ -67,13 +67,10 @@ class BasicMOE(nn.Module):
 
         self.expert_number = expert_number
 
-        # 专家路由【疑问：隐藏层如何选取?】
-        # gate 就是选一个 expert 
+        # 专家路由 : 选一个 expert 
         self.gate = nn.Sequential(
             nn.Linear(feature_in, expert_number, bias=False) # 简单即正义
         )
-
-        # 建议：在输出端加个归一化，解决你提到的 [-10, 1] 分布不均问题
         self.output_norm = nn.LayerNorm(feature_out)
     
     def forward(self, x):  

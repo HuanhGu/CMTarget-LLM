@@ -44,7 +44,7 @@ def prepare():
     parser.add_argument('-s', '--source_name', type = str, default="hit")#drugbank
     parser.add_argument('-t', '--target_name', default='drugbank')
     
-    parser.add_argument('--token_dim_pro', type = int, default='100')#probert=1024, w2c=100
+    parser.add_argument('--token_dim_pro', type = int, default='512')#probert=1024, w2c=100
     parser.add_argument('--token_dim_drug', type = int, default='768')#chemberta=768
     parser.add_argument('--task', type=str, default = "train", 
                         help="choose the stage : train, predict")

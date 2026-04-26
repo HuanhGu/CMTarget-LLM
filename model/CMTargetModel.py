@@ -12,6 +12,47 @@ from utils.metrix import *
 from embedding.FeatureExtract import FeatureExtractor
 from model.scorer import Scorer
 
+class BertEmbeddings(nn.Module):
+    def __init__(self, vocab_size=767, hidden_size=768, max_position_embeddings=514, padding_idx=1):
+        super(BertEmbeddings, self).__init__()
+        
+        # 1. 词向量层: 词典大小 767, 维度 768
+        # padding_idx=1 表示索引为 1 的 token (通常是 <pad>) 不计入梯度更新
+        self.word_embeddings = nn.Embedding(vocab_size, hidden_size, padding_idx)
+        self.position_embeddings = nn.Embedding(max_position_embeddings, hidden_size, padding_idx)# 2. 位置向量层:
+        self.token_type_embeddings = nn.Embedding(1, hidden_size)# 3. 句子类型向量层
+
+        self.LayerNorm = nn.LayerNorm(hidden_size, eps=1e-05)
+        self.dropout = nn.Dropout(p=0.1)
+
+    def forward(self, input_ids, token_type_ids=None, position_ids=None):
+        # 获取序列长度
+        seq_length = input_ids.size(1)
+        
+        # 如果没有传入 position_ids，则生成默认的序列位置 [0, 1, 2, ...]
+        if position_ids is None:
+            position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
+            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+
+        # 如果没有传入 token_type_ids，默认为全 0
+        if token_type_ids is None:
+            token_type_ids = torch.zeros_like(input_ids)
+
+        # 生成三种 Embedding
+        words_emb = self.word_embeddings(input_ids)
+        pos_emb = self.position_embeddings(position_ids)
+        type_emb = self.token_type_embeddings(token_type_ids)
+
+        # 核心逻辑：将三种 Embedding 相加
+        embeddings = words_emb + pos_emb + type_emb
+        
+        # 最后进行归一化和 Dropout
+        embeddings = self.LayerNorm(embeddings)
+        embeddings = self.dropout(embeddings)
+        
+        return embeddings
+    
+
 
 class CMTargetModel(nn.Module):
     def __init__(self, configs):
@@ -37,21 +78,24 @@ class CMTargetModel(nn.Module):
         
 
         # 4. 模型可学习参数
-        self.protein_embed = nn.Embedding(30, self.pro_token_dim, padding_idx=0) #词表大小26
-        self.drug_embed = nn.Embedding(767, self.drug_token_dim, padding_idx=1)
+        self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.pro_token_dim, max_position_embeddings=506, padding_idx=0)
+        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.drug_token_dim, max_position_embeddings=222, padding_idx=1)
+        
+        # self.protein_embed = nn.Embedding(30, self.pro_token_dim, padding_idx=0) #词表大小26
+        # self.drug_embed = nn.Embedding(767, self.drug_token_dim, padding_idx=1)
 
 
         # ===  创建linear, 避免机械使用 encoder_data;  添加归一化层，让输入更稳定  
         self.emb_data_pro = nn.Sequential(
             nn.Linear(self.pro_token_dim, self.pro_token_dim),
-            # nn.LayerNorm(self.pro_token_dim),
-            nn.PReLU(num_parameters=1)
+            nn.LayerNorm(self.pro_token_dim),
+            nn.SELU()
         )
         # 化合物经过RobertaModel已经很规范了, 不需要只来一个linear 可学习就行
         self.emb_data_drug = nn.Sequential(
             nn.Linear(self.drug_token_dim, self.drug_token_dim),
-            # nn.LayerNorm(self.drug_token_dim),
-            nn.PReLU(num_parameters=1)
+            nn.LayerNorm(self.drug_token_dim),
+            nn.SELU()
         )
 
 
@@ -70,6 +114,10 @@ class CMTargetModel(nn.Module):
         # === 创建 打分 模型 ===
         self.scorer = Scorer(configs, self.moe_emb_dim)
 
+        # 对所有权重做 Xavier 初始化（除了 embedding 可能已放大）
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
 
     def forward(self, protein_features, drug_features):
         """ model的前向传播
@@ -88,45 +136,25 @@ class CMTargetModel(nn.Module):
         drug_mask = (drugs != 1).float().unsqueeze(1) # 128,1,100
 
         proteinembed = self.protein_embed(proteins) #128,1200   128,1200,768  #128,506,100
-        protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
-        pro_fused_output = self.sequence_attention_pro(protein_encoder_learn, protein_mask) #128,633,100
+        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,633,100
+        # protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
+        # pro_fused_output = self.sequence_attention_pro(protein_encoder_learn, protein_mask) #128,633,100
         
         drugembed = self.drug_embed(drugs) #128,222   128,222,128
-        drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
-        drug_fused_output = self.sequence_attention_drug(drug_encoder_learn, drug_mask) #128,633,100
+        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask)
+        # drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
+        # drug_fused_output = self.sequence_attention_drug(drug_encoder_learn, drug_mask) #128,633,100
 
         # 不要三模态
         contrastive_Loss = 0
-        """
-        // pro_encoder_modals: [3, batch_size, token_num, token_dim] 蛋白质三种模态的特征encoder tensor
-        // drug_encoder_modals:[3, batch_size, token_num, token_dim] 化合物三种模态的特征encoder tensor
-        # 构造三模态
-        # print(type(protein_features))
-        pro_encoder_modals = torch.stack(
-            [protein_features, protein_features, protein_features],
-            dim=0
-        )  # (3, B, T, D)  [3,2,416,100]  [3,2,195,100] [3,16,1024]
 
-        drug_encoder_modals = torch.stack(
-            [drug_features, drug_features, drug_features],
-            dim=0
-        )   # [3,2,43,768]  [3,2,73,768]  
-        
-        # 2. 特征融合 —— 采用注意力机制
-        # 2.1  蛋白质特征融合;2.2  化合物特征融合
-        # pro_X = [3,2,501,100]  →  [2,501,100]    drug_X:[3,2,68,768] →  [2,68,768] 
-        # 前向传播, 对比损失
-        pro_fused_output, pro_fusion_loss = self.pro_fusion_model(pro_encoder_modals[0], pro_encoder_modals[1], pro_encoder_modals[2])
-        drug_fused_output, drug_fusion_loss = self.drug_fusion_model(drug_encoder_modals[0], drug_encoder_modals[1], drug_encoder_modals[2])
-        contrastive_Loss = pro_fusion_loss + drug_fusion_loss #9.9 + 8.4
-        """
-        
+
         # 3. 专家编码器 : 不同蛋白和化合物的token用不同专家编码 
         # 专家编码输出, moe的负载均衡损失
         pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output) #in:[2,501,100] out:[2,501,256]  # 这里蛋白质每个token特征长得一模一样！
         drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output) #in:[2,68,78] out:[2,68,256]
         load_balancing_loss = pro_moe_loss + drug_moe_loss     # 275 + 128    
-
+        
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
         score = self.scorer.forward(pro_moe_output, drug_moe_output)
         
