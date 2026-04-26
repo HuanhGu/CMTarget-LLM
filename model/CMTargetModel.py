@@ -95,30 +95,28 @@ class CMTargetModel(nn.Module):
         self.stamp = configs['timestamp']
         self.device = configs['device']
 
-        self.pro_token_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
-        self.drug_token_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
+        self.pro_hid_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
+        self.drug_hid_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
         self.moe_emb_dim = 1024      # 3 专家编码参数
-        
 
         # 4. 模型可学习参数
-        self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.pro_token_dim, max_position_embeddings=506, padding_idx=0)
-        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.drug_token_dim, max_position_embeddings=222, padding_idx=1)
+        self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.pro_hid_dim, max_position_embeddings=506, padding_idx=0)
+        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.pro_hid_dim, max_position_embeddings=222, padding_idx=1)
 
         # === 创建 fusion 模型 =====
-        # self.sequence_attention_pro = EnhancedAttentionBlock(self.pro_token_dim, dropout_rate=0.1)
-        # self.sequence_attention_drug = EnhancedAttentionBlock(self.drug_token_dim, dropout_rate=0.1)
-        self.sequence_attention_pro = SelfAttention(self.pro_token_dim, 512, 512)
-        self.sequence_attention_drug = SelfAttention(self.drug_token_dim, 512, 512)
+        # self.sequence_attention_pro = EnhancedAttentionBlock(self.pro_hid_dim, dropout_rate=0.1)
+        # self.sequence_attention_drug = EnhancedAttentionBlock(self.drug_hid_dim, dropout_rate=0.1)
+        self.sequence_attention_pro = SelfAttention(self.pro_hid_dim, self.pro_hid_dim, self.pro_hid_dim)
+        self.sequence_attention_drug = SelfAttention(self.drug_hid_dim, self.drug_hid_dim, self.drug_hid_dim)
 
         # === 创建 基础专家 模型 ===
         # self.basic_pro_moe = BasicMOE(self.pro_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[100,256]
         # self.basic_drug_moe = BasicMOE(self.drug_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[768,256]
-        self.basic_pro_moe = Qwen2MoeSparseMoeBlock(512, self.moe_emb_dim, 6)
-        self.basic_drug_moe = Qwen2MoeSparseMoeBlock(512, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
+        self.basic_pro_moe = Qwen2MoeSparseMoeBlock(self.pro_hid_dim, self.moe_emb_dim, 6)
+        self.basic_drug_moe = Qwen2MoeSparseMoeBlock(self.drug_hid_dim, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
 
-        
         # === 创建 打分 模型 ===
-        self.scorer = Scorer(configs, self.moe_emb_dim)
+        self.scorer = Scorer(configs, self.pro_hid_dim)
 
 
     def forward(self, protein_features, drug_features):
@@ -132,10 +130,6 @@ class CMTargetModel(nn.Module):
         proteinembed = self.protein_embed(proteins) #128,447,512
         drugembed = self.drug_embed(drugs) #128,512,768
 
-        # 将embedding通过线性层处理
-        # protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
-        # drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
-
         # 2. 自注意力
         pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,447,512        
         drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask) #128,512,512
@@ -146,12 +140,12 @@ class CMTargetModel(nn.Module):
         # 专家编码输出, moe的负载均衡损失
         pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output, protein_mask) #in:[2,501,100] out:[2,501,256]
         drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output, drug_mask) #in:[2,68,78] out:[2,68,256]
-        load_balancing_loss = pro_moe_loss + drug_moe_loss     # 275 + 128    
-        load_balancing_loss=0
+        load_balancing_loss = pro_moe_loss + drug_moe_loss     # 3.9189+3.4380 
+        # load_balancing_loss=0
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
-        score = self.scorer.forward(pro_moe_output, drug_moe_output)
-
-        return score, contrastive_Loss, load_balancing_loss
+        predicted_scores = self.scorer.forward(pro_moe_output, drug_moe_output)
+        
+        return predicted_scores, contrastive_Loss, load_balancing_loss
     
     
     def save_model(self, output_path = './checkpoints/tmp.pt'):

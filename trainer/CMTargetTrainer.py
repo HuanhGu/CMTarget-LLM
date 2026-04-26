@@ -43,7 +43,7 @@ class CMTargetTrainer():
 
 
         print("some settings...")
-        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器[只写在这里不可训练，必须加到优化器里]
+        self.loss_balancer = MultiTaskLossWrapper(task_num=2).to(self.device) # loss均衡器[只写在这里不可训练，必须加到优化器里]
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
 
@@ -57,10 +57,13 @@ class CMTargetTrainer():
                 bias_p += [p]
             else:
                 weight_p += [p]
+        balancer_params = list(self.loss_balancer.parameters())
 
-        self.optimizer = optim.AdamW(
-            [{'params': weight_p, 'weight_decay': 1e-4}, 
-             {'params': bias_p, 'weight_decay': 0}], lr=self.learning_rate)
+        self.optimizer = optim.AdamW([
+            {'params': weight_p, 'weight_decay': 1e-4}, 
+            {'params': bias_p, 'weight_decay': 0},
+            {'params': balancer_params, 'lr': self.learning_rate} # 给 balancer 专门开一组
+        ], lr=self.learning_rate)
         
         self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
                                                 cycle_momentum=False,
@@ -73,6 +76,7 @@ class CMTargetTrainer():
             " 1. 读取序列数据集 "
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
+            d_df = d_df.sample(n=4499, random_state=42)  # random_state 保证可复现
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 
@@ -100,8 +104,8 @@ class CMTargetTrainer():
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
         "量级 : [27+2+0.68]"
         # 19 + 2 + 0.6930[27+2+0.68]
-        # loss = self.loss_balancer(contrastive_Loss, load_balancing_loss, pred_loss)
-        loss = pred_loss  # 量级：0~10s
+        loss_list = torch.stack([load_balancing_loss, pred_loss])
+        loss = self.loss_balancer(loss_list)
         return loss
 
     def model_train_anepoch(self, model, epoch_id):
@@ -124,7 +128,7 @@ class CMTargetTrainer():
             logits, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
             
             # 计算预测损失  [2]  [2,1]
-            label_batch = label_batch.to(self.device)
+            label_batch = label_batch.to(self.device)            
             pred_loss = self.criterion(logits, label_batch)
 
             # 总损失 = 对比损失 + 负载均衡损失 + 预测损失 19 + 2 + 0.6930[27+2+0.68]
@@ -139,6 +143,7 @@ class CMTargetTrainer():
             running_loss.append(loss.item())
 
             # 计算准确率
+
             pred_score = torch.sigmoid(logits)
             predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
             correct += (predicted == label_batch).sum().item()
@@ -171,16 +176,13 @@ class CMTargetTrainer():
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码
                 logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
-                pred_score = torch.sigmoid(logits)
-                pred_score = pred_score.cpu()
-                # predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
-
-                pred_loss = self.criterion(pred_score, label_batch)
+                label_batch = label_batch.to(self.device)
+                pred_loss = self.criterion(logits, label_batch)
                 
                 loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
                 running_loss.append(loss.item())
 
-                # pred = torch.where(pred_score > threshold, torch.tensor(1.0), torch.tensor(0.0))
+                pred_score = torch.sigmoid(logits)
                 pred = (pred_score > 0.5).float()  # 将输出转换为0或1
                 # 预测list 和  真值list
                 targets.extend(label_batch.tolist())

@@ -1,0 +1,10 @@
+Epoch [1/300]: loss = 89.6613, recall = 0.7014, precision = 0.4456, f1 = 0.545, accuracy = 0.4378, auc = 0.4479
+Epoch [2/300]: loss = 411.7261, recall = 0.9745, precision = 0.4867, f1 = 0.6492, accuracy = 0.4944, auc = 0.5129
+Epoch [3/300]: loss = 11.3351, recall = 0.0069, precision = 0.6, f1 = 0.0137, accuracy = 0.5211, auc = 0.5013
+Epoch [4/300]: loss = 10.018, recall = 0.0, precision = 0.0, f1 = 0.0, accuracy = 0.52, auc = 0.5
+Epoch [5/300]: loss = 9.6076, recall = 0.0, precision = 0.0, f1 = 0.0, accuracy = 0.52, auc = 0.5
+Epoch [6/300]: loss = 11.9357, recall = 0.875, precision = 0.484, f1 = 0.6232, accuracy = 0.4922, auc = 0.5069
+Epoch [7/300]: loss = 122.2716, recall = 0.0, precision = 0.0, f1 = 0.0, accuracy = 0.52, auc = 0.5
+Epoch [8/300]: loss = 112.3482, recall = 1.0, precision = 0.48, f1 = 0.6486, accuracy = 0.48, auc = 0.5
+Epoch [9/300]: loss = 7.9312, recall = 1.0, precision = 0.48, f1 = 0.6486, accuracy = 0.48, auc = 0.5
+[BEST] recall = 0.9745, precision = 0.4867, f1 = 0.6492, accuracy =0.4944, auc = 0.5129

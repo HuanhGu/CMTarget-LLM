@@ -6,25 +6,37 @@ import csv
 from pathlib import Path
 import torch.nn as nn
 import torch
-
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num):
         super(MultiTaskLossWrapper, self).__init__()
-        # 初始化可学习参数 log(sigma^2)
-        # 初始化为 0，意味着初始权重为 1
+        # 使用 log(sigma^2) 来确保数值稳定性，这些是可学习参数
         self.log_vars = nn.Parameter(torch.zeros(task_num))
 
-    def forward(self, contrastive_loss, load_balancing_loss, pred_loss):
-        losses = [contrastive_loss, load_balancing_loss, pred_loss]
-        weighted_losses = []
-        
-        for i, loss in enumerate(losses):
-            # 计算权重: 1 / (2 * exp(log_var))
-            # 这里的 log_var 实际上是 log(sigma^2)
-            precision = torch.exp(-self.log_vars[i])
-            weighted_losses.append(precision * loss + self.log_vars[i])
+    def forward(self, loss_stack):
+        # 这里的 loss_stack 是包含不同任务 loss 的列表
+        precision = torch.exp(-self.log_vars)
+        weighted_losses = precision * loss_stack + self.log_vars
+        return weighted_losses.sum()
+    
 
-        return sum(weighted_losses)
+# class MultiTaskLossWrapper(nn.Module):
+#     def __init__(self, task_num):
+#         super(MultiTaskLossWrapper, self).__init__()
+#         # 初始化可学习参数 log(sigma^2)
+#         # 初始化为 0，意味着初始权重为 1
+#         self.log_vars = nn.Parameter(torch.zeros(task_num))
+
+#     def forward(self, load_balancing_loss, pred_loss):
+#         losses = [load_balancing_loss, pred_loss]
+#         weighted_losses = []
+        
+#         for i, loss in enumerate(losses):
+#             # 计算权重: 1 / (2 * exp(log_var))
+#             # 这里的 log_var 实际上是 log(sigma^2)
+#             precision = torch.exp(-self.log_vars[i])
+#             weighted_losses.append(precision * loss + self.log_vars[i])
+
+#         return sum(weighted_losses)
 
 
 class TrainLogger:

@@ -33,10 +33,12 @@ class Qwen2MoeSparseMoeBlock(nn.Module):
         # 专家路由 : 选一个 expert 
         self.gate = nn.Sequential(nn.Linear(dim, expert_number, bias=False))
         self.experts = nn.ModuleList([Qwen2MoeMLP(dim, expert_dim) for _ in range(expert_number)])
-
+        
         # 与Mixtral相比，Qwen2-MoE多了 shared_expert 和 shared_expert_gate
         self.shared_expert = Qwen2MoeMLP(dim, intermediate_size=expert_dim)
         self.shared_expert_gate = torch.nn.Linear(dim, 1, bias=False)
+
+        self.dropout = nn.Dropout(p=0.3)
 
         # self.output_norm = nn.LayerNorm(dim, expert_dim)
     
@@ -81,11 +83,11 @@ class Qwen2MoeSparseMoeBlock(nn.Module):
         final_hidden_states = final_hidden_states + shared_expert_output
         final_hidden_states = final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
         
+        final_hidden_states = self.dropout(final_hidden_states)
+
+        att_mask = att_mask.reshape(batch_size, sequence_length)   
         aux_moe_loss = load_balancing_loss_func(
-            router_logits,
-            self.num_experts,            # 专家总数
-            self.top_k,    # 每个 token 分配的专家数
-            att_mask.transpose(1, 2)              # mask 掩码，忽略 padding token
+            (router_logits,), self.num_experts, self.top_k, att_mask
         )
         
         return final_hidden_states, aux_moe_loss
