@@ -93,9 +93,6 @@ class mutil_head_attention(nn.Module):
         protein = protein * Protein_atte #128,96,1179
         return drug,protein #128,633,256;  128,222,256
     
-
-
-
 class Scorer(torch.nn.Module):
     '''
     给蛋白质和化合物特征向量打分

@@ -43,7 +43,7 @@ class Qwen2MoeSparseMoeBlock(nn.Module):
 
     
     def forward(self, hidden_states, att_mask) -> torch.Tensor:  
-        "输入: 融合特征 [128, 506, 512]"
+        "输入: 融合特征 [128, 447, 512]"
         batch_size, sequence_length, hidden_dim = hidden_states.shape
         hidden_states = hidden_states.view(-1, hidden_dim)
 
@@ -85,7 +85,7 @@ class Qwen2MoeSparseMoeBlock(nn.Module):
             router_logits,
             self.num_experts,            # 专家总数
             self.top_k,    # 每个 token 分配的专家数
-            att_mask,              # mask 掩码，忽略 padding token
+            att_mask.transpose(1, 2)              # mask 掩码，忽略 padding token
         )
         
         return final_hidden_states, aux_moe_loss

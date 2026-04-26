@@ -43,7 +43,6 @@ class CMTargetTrainer():
 
 
         print("some settings...")
-        #-loss
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器[只写在这里不可训练，必须加到优化器里]
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
@@ -63,22 +62,11 @@ class CMTargetTrainer():
             [{'params': weight_p, 'weight_decay': 1e-4}, 
              {'params': bias_p, 'weight_decay': 0}], lr=self.learning_rate)
         
-        # self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-5) #Adam
         self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
                                                 cycle_momentum=False,
                                                 step_size_up=len(self.train_loader))
+
         
-        # self.optimizer = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1)
-        # self.optimizer = optim.Adam(
-        #     [
-        #         {'params': self.model.parameters()},
-        #         {'params': self.loss_balancer.parameters(), 'lr': self.learning_rate * 0.1}#使用较小的lr
-        #     ],
-        #     lr=self.learning_rate
-        # )
-
-
-
     def get_dataloader(self, dataname = 'hit'):
             """ 得到分词结果 """
 

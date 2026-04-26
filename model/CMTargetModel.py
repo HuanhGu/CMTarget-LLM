@@ -94,7 +94,7 @@ class CMTargetModel(nn.Module):
         self.configs = configs
         self.stamp = configs['timestamp']
         self.device = configs['device']
-        
+
         self.pro_token_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
         self.drug_token_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
         self.moe_emb_dim = 1024      # 3 专家编码参数
@@ -122,23 +122,23 @@ class CMTargetModel(nn.Module):
 
 
     def forward(self, protein_features, drug_features):
-        proteins = protein_features.to(self.device)#16,633,100 #128,506
-        drugs = drug_features.to(self.device)#16,222,768  # 128,222
+        proteins = protein_features.to(self.device) # 128,447
+        drugs = drug_features.to(self.device) # 128,512
         # 掩码
-        protein_mask = (proteins != 0).float().unsqueeze(1) #128,1,1200
-        drug_mask = (drugs != 1).float().unsqueeze(1) # 128,1,100
+        protein_mask = (proteins != 0).float().unsqueeze(1) #128,1,447
+        drug_mask = (drugs != 1).float().unsqueeze(1) # 128,1,512
 
         # 1. wordEmbedding + PosEmbedding
-        proteinembed = self.protein_embed(proteins) #128,1200   128,1200,768  #128,506,100
-        drugembed = self.drug_embed(drugs) #128,222   128,222,128
+        proteinembed = self.protein_embed(proteins) #128,447,512
+        drugembed = self.drug_embed(drugs) #128,512,768
 
         # 将embedding通过线性层处理
         # protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
         # drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
 
         # 2. 自注意力
-        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,633,100        
-        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask)
+        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,447,512        
+        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask) #128,512,512
         contrastive_Loss = 0  # 不要三模态
 
 
