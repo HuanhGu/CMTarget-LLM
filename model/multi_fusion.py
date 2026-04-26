@@ -46,7 +46,43 @@ class SelfAttention(nn.Module):
         return output
 
 
+class EnhancedAttentionBlock(nn.Module):
+    def __init__(self, token_dim, dropout_rate=0.1):
+        super(EnhancedAttentionBlock, self).__init__()
+        
+        # 1. 自注意力层
+        self.attention = SelfAttention(token_dim, token_dim, token_dim)
+        
+        # 2. 第一个归一化层和 Dropout
+        self.norm1 = nn.LayerNorm(token_dim)
+        self.dropout1 = nn.Dropout(dropout_rate)
+        
+        # 3. 前馈神经网络 (Feed-Forward Network)
+        # 增加 linear 层来提升模型的非线性表达能力
+        self.ffn = nn.Sequential(
+            nn.Linear(token_dim, token_dim * 4), # 通常放大 4 倍
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(token_dim * 4, token_dim)
+        )
+        
+        # 4. 第二个归一化层和 Dropout
+        self.norm2 = nn.LayerNorm(token_dim)
+        self.dropout2 = nn.Dropout(dropout_rate)
 
+    def forward(self, x, xmask):
+        # --- 第一部分：注意力 + 残差连接 ---
+        # 残差连接 (Residual) 是缓解 Loss 波动的关键
+        attn_out = self.attention(x, xmask) 
+        x = x + self.dropout1(attn_out)
+        x = self.norm1(x) # 先残差再 Norm (Post-LN) 或先 Norm 再残差 (Pre-LN)
+        
+        # --- 第二部分：线性层 FFN + 残差连接 ---
+        ffn_out = self.ffn(x)
+        x = x + self.dropout2(ffn_out)
+        x = self.norm2(x)
+        
+        return x
 
 
 

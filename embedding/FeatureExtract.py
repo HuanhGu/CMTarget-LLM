@@ -29,9 +29,9 @@ class FeatureExtractor(object):
         self.drug_model = AutoModel.from_pretrained(local_model_path, local_files_only=True).to(self.device)
         self.drug_model.eval()
 
-        # self.pro_tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False, local_files_only=True)
-        # self.pro_model = AutoModel.from_pretrained("Rostlab/prot_bert", local_files_only=True).to(self.device)
-        # self.pro_model.eval()
+        self.pro_tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False, local_files_only=True)
+        self.pro_model = AutoModel.from_pretrained("Rostlab/prot_bert", local_files_only=True).to(self.device)
+        self.pro_model.eval()
 
 
     # ================蛋白质probert==================
@@ -52,7 +52,22 @@ class FeatureExtractor(object):
             mean_prolen_all = int(mean_prolen_all)
             print(f"pro_smiles 的 全局中位数 token 长度为: {mean_prolen_all}")
             return mean_prolen_all
-
+    
+    def pro_tokenizer_probert(self, pro_sequence, p_max_tokenLen):
+        # input_ids : [batch, p_max_tokenLen] 
+        # 1. 核心处理：将 "MKAL" 转换为 "M K A L"
+        # 如果 pro_sequence 是单个字符串
+        if isinstance(pro_sequence, str):
+            pro_sequence = " ".join(list(pro_sequence))
+        # 如果 pro_sequence 是列表 (Batch)，则对每个元素处理
+        elif isinstance(pro_sequence, list):
+            pro_sequence = [" ".join(list(seq)) for seq in pro_sequence]
+        
+        inputs = self.pro_tokenizer(pro_sequence, return_tensors="pt", 
+                                     padding='max_length', max_length=p_max_tokenLen,
+                                     truncation=True).to(self.device) 
+        
+        return inputs['input_ids']
 
 
     # ================化合物ChemBERTa==================
@@ -70,6 +85,14 @@ class FeatureExtractor(object):
         # drugs = outputs.pooler_output [batch, 768]
         drugs = outputs.last_hidden_state.cpu() # [batch, d_max_tokenLen, 78] [8,222,768]  || [8, 72, 768], [8, 83, 768]
         return drugs
+    
+    def drug_tokenizer_chemberta(self, drug_sequence, d_max_tokenLen):
+        # input_ids : [batch, d_max_tokenLen] || [8, 222]
+        inputs = self.drug_tokenizer(drug_sequence, return_tensors="pt", 
+                                     padding='max_length', max_length=d_max_tokenLen,
+                                     truncation=True).to(self.device) 
+        
+        return inputs['input_ids']
     
     def get_chemberta_max_length(self, all_drug_smiles):
         all_inputs = self.drug_tokenizer(all_drug_smiles, truncation=True)

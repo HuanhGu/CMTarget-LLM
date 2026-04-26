@@ -9,7 +9,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from datetime import datetime
 
-from embedding.dataset_build import *
+# from embedding.dataset_build import *
 from embedding.FeatureExtract import FeatureExtractor
 
 from model.scorer import *
@@ -111,10 +111,10 @@ if __name__ == '__main__':
         f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
         )
         # 源域训练
-        start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        start = datetime.now()
         trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
         trainer.train(pretrain_output_path)
-        end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        end = datetime.now()
 
         print("-" * 30)
         print(f"Pre-Train Start Time: {start.strftime('%Y-%m-%d %H:%M:%S')}")

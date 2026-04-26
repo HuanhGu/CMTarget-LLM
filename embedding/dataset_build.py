@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 # --- 重点：自定义 collate_fn 来处理不同长度的 batch ---
-def collate_fn(batch):
+def collate_fn1(batch):
     proteins, drugs, labels, smiles, sequences = zip(*batch)
     # drugs, proteins, labels = zip(*batch)
     # 将一个 batch 内的序列 pad 到当前 batch 的最大长度

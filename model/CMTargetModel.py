@@ -6,7 +6,7 @@ import os
 
 
 
-from model.multi_fusion import SelfAttention
+from model.multi_fusion import SelfAttention, EnhancedAttentionBlock
 from model.moe import *
 from utils.metrix import *
 from embedding.FeatureExtract import FeatureExtractor
@@ -37,20 +37,27 @@ class CMTargetModel(nn.Module):
         
 
         # 4. 模型可学习参数
+        self.protein_embed = nn.Embedding(30, self.pro_token_dim, padding_idx=0) #词表大小26
+        self.drug_embed = nn.Embedding(767, self.drug_token_dim, padding_idx=1)
+
+
         # ===  创建linear, 避免机械使用 encoder_data;  添加归一化层，让输入更稳定  
         self.emb_data_pro = nn.Sequential(
             nn.Linear(self.pro_token_dim, self.pro_token_dim),
-            nn.LayerNorm(self.pro_token_dim),
+            # nn.LayerNorm(self.pro_token_dim),
             nn.PReLU(num_parameters=1)
         )
         # 化合物经过RobertaModel已经很规范了, 不需要只来一个linear 可学习就行
         self.emb_data_drug = nn.Sequential(
             nn.Linear(self.drug_token_dim, self.drug_token_dim),
+            # nn.LayerNorm(self.drug_token_dim),
             nn.PReLU(num_parameters=1)
         )
 
 
         # === 创建 fusion 模型 =====
+        # self.sequence_attention_pro = EnhancedAttentionBlock(self.pro_token_dim, dropout_rate=0.1)
+        # self.sequence_attention_drug = EnhancedAttentionBlock(self.drug_token_dim, dropout_rate=0.1)
         self.sequence_attention_pro = SelfAttention(self.pro_token_dim, self.pro_token_dim, self.pro_token_dim)
         self.sequence_attention_drug = SelfAttention(self.drug_token_dim, self.drug_token_dim, self.drug_token_dim)
         # self.pro_fusion_model = CrossModalFusionModel(self.pro_sequence_tklen, self.pro_structure_tklen, self.pro_knowledge_tklen, self.pro_token_dim)
@@ -73,19 +80,20 @@ class CMTargetModel(nn.Module):
             pro_moe_output: 蛋白质序列经过特征提取、融合、moe编码后的特征向量, 
             drug_moe_output:化合物序列经过特征提取、融合、moe编码后的特征向量,   
         """
-        protein_features = protein_features.to(self.device)#16,633,100
-        drug_features = drug_features.to(self.device)#16,222,768
-        
+        proteins = protein_features.to(self.device)#16,633,100 #128,506
+        drugs = drug_features.to(self.device)#16,222,768  # 128,222
+         
         # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化→ padding 0, 注意力机制的掩码
-        # protein_mask = (protein_features != 0).float()
-        src_mask = (protein_features.sum(dim=-1) != 0).float()
-        protein_mask = src_mask.unsqueeze(1)  #128,1,633
+        protein_mask = (proteins != 0).float().unsqueeze(1) #128,1,1200
+        drug_mask = (drugs != 1).float().unsqueeze(1) # 128,1,100
 
-        protein_encoder_learn = self.emb_data_pro(protein_features) # 16,633,100
+        proteinembed = self.protein_embed(proteins) #128,1200   128,1200,768  #128,506,100
+        protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
         pro_fused_output = self.sequence_attention_pro(protein_encoder_learn, protein_mask) #128,633,100
         
-        drug_encoder_learn = self.emb_data_drug(drug_features) # 16,222,768
-        drug_fused_output = drug_encoder_learn
+        drugembed = self.drug_embed(drugs) #128,222   128,222,128
+        drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
+        drug_fused_output = self.sequence_attention_drug(drug_encoder_learn, drug_mask) #128,633,100
 
         # 不要三模态
         contrastive_Loss = 0

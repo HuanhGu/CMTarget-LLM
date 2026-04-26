@@ -32,22 +32,12 @@ class CMTargetTrainer():
         self.batch_size = configs['batch_size']
         self.patience = self.configs['patience']
         self.checkpoint_interval = self.configs['checkpoint_interval']
-        
-        "数据-从文件加载"
-        train_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_80pct.h5'
-        test_encoder_path = Path('data') / 'encoder' / source_name / 'encoder_20pct.h5'
-        print("📕 get pre-train dataloader.")
-        self.train_feat_loader = self.get_dataloader_frompath(train_encoder_path)
-        print("📕 get pre-test dataloader.")
-        self.test_feat_loader = self.get_dataloader_frompath(test_encoder_path)
-        self.val_feat_loader = self.get_dataloader_frompath(test_encoder_path)
 
-        """
         "数据-直接提取"
         feature_extractor = FeatureExtractor()
-        self.train_feat_loader, self.test_feat_loader, self.val_feat_loader = self.get_dataloader(feature_extractor, source_name)
-        """
-
+        self.train_feat_loader, self.test_feat_loader = self.get_dataloader(feature_extractor, source_name)
+        
+        
 
         print("some settings...")
         self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
@@ -64,26 +54,7 @@ class CMTargetTrainer():
             print('Get model from:', model_path)
             model.load_model(model_path)
         return model
-    
-    
-    def get_dataloader_frompath(self, train_encoder_path):
-        # 判断文件类型
-        file_ext = os.path.splitext(train_encoder_path)[-1].lower()
 
-        if file_ext in ['.h5', '.hdf5']:
-            with h5py.File(train_encoder_path, "r") as f:
-                protein = torch.tensor(f["protein"][:], dtype=torch.float32)
-                drug = torch.tensor(f["drug"][:], dtype=torch.float32)
-                label = torch.tensor(f["label"][:], dtype=torch.float32)
-            dataset = TensorDataset(protein, drug, label)
-        elif file_ext in ['.pt', '.pth']:
-            checkpoint = torch.load(train_encoder_path)
-            dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
-        else:
-            print("there are no encoder files, please execute feature_save.py")
-
-        val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
-        return val_loader
     
     def get_dataloader(self, feature_extractor, dataname = 'hit'):
         """ pre-extract :  get feature using chemberta and word2vec. """
@@ -103,13 +74,13 @@ class CMTargetTrainer():
 
         "数据集划分,得到 feature_dataset, feature_dataloader"
         total_sz = len(d_df)
-        train_sz, val_sz, test_sz = int(0.7*total_sz), int(0.1*total_sz), total_sz - int(0.7*total_sz) - int(0.2*total_sz)
-        train_dataset, val_dataset, test_dataset = random_split(feature_dataset, [train_sz, val_sz, test_sz])
+        train_sz, test_sz = int(0.8*total_sz), total_sz - int(0.8*total_sz)
+        train_dataset, test_dataset = random_split(feature_dataset, [train_sz, test_sz])
+
         train_feat_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True)
         test_feat_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True)
-        val_feat_load = DataLoader(dataset=val_dataset,batch_size=self.batch_size,shuffle=True)
 
-        return train_feat_load, test_feat_load, val_feat_load
+        return train_feat_load, test_feat_load
 
     
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):

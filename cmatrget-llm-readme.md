@@ -391,3 +391,5 @@ Check the documentation of torch.load to learn more about types accepted by defa
 
 ```
 
+
+rm -rf **/checkpoints/*
