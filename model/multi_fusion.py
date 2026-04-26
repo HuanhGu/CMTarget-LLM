@@ -86,8 +86,6 @@ class EnhancedAttentionBlock(nn.Module):
 
 
 
-
-
 # 实现Scaled Dot-Product Attention
 ''' S
 

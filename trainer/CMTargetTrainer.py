@@ -37,6 +37,7 @@ class CMTargetTrainer():
         self.checkpoint_interval = configs['checkpoint_interval']
 
         self.model = self.get_model(model_path)
+        print(self.model)
         # self.feature_extracror = FeatureExtractor()
         self.train_loader,self.test_loader = self.get_dataloader(source_name) #样本 3599, 29
 

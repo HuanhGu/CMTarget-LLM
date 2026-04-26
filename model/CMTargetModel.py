@@ -11,6 +11,40 @@ from model.moe import *
 from utils.metrix import *
 from embedding.FeatureExtract import FeatureExtractor
 from model.scorer import Scorer
+from einops import rearrange
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-8):
+        super().__init__()
+        self.eps = eps
+        self.scale = nn.Parameter(torch.ones(dim))  # γ
+
+    def forward(self, x):
+        # x: [batch, seq_len, dim]
+        rms = x.pow(2).mean(-1, keepdim=True).sqrt()  # 计算 RMS
+        x_normed = x / (rms + self.eps)               # 归一化
+        return x_normed * self.scale
+
+class RotaryPositionEmbedding(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
+        self.register_buffer("inv_freq", inv_freq)
+
+    def forward(self, seq_len, device):
+        t = torch.arange(seq_len, device=device).type_as(self.inv_freq)
+        freqs = torch.einsum("i , j -> i j", t, self.inv_freq)
+        return torch.cat((freqs, freqs), dim=-1)
+
+
+def rotate_half(x):
+    x = rearrange(x, "... (d j) -> ... d j", j=2)
+    x1, x2 = x.unbind(dim=-1)
+    return torch.cat((-x2, x1), dim=-1)
+
+def apply_rotary_pos_emb(pos, t):
+    return (t * pos.cos()) + (rotate_half(t) * pos.sin())
+
 
 class BertEmbeddings(nn.Module):
     def __init__(self, vocab_size=767, hidden_size=768, max_position_embeddings=514, padding_idx=1):
@@ -19,37 +53,37 @@ class BertEmbeddings(nn.Module):
         # 1. 词向量层: 词典大小 767, 维度 768
         # padding_idx=1 表示索引为 1 的 token (通常是 <pad>) 不计入梯度更新
         self.word_embeddings = nn.Embedding(vocab_size, hidden_size, padding_idx)
-        self.position_embeddings = nn.Embedding(max_position_embeddings, hidden_size, padding_idx)# 2. 位置向量层:
         self.token_type_embeddings = nn.Embedding(1, hidden_size)# 3. 句子类型向量层
 
-        self.LayerNorm = nn.LayerNorm(hidden_size, eps=1e-05)
+        # Rotary Positional Embedding
+        self.rope = RotaryPositionEmbedding(hidden_size)
+
+        # self.LayerNorm = nn.LayerNorm(hidden_size, eps=1e-05)
+        self.LayerNorm = RMSNorm(hidden_size, eps=1e-05)
         self.dropout = nn.Dropout(p=0.1)
 
-    def forward(self, input_ids, token_type_ids=None, position_ids=None):
+
+    def forward(self, input_ids, token_type_ids=None):
         # 获取序列长度
         seq_length = input_ids.size(1)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # 如果没有传入 position_ids，则生成默认的序列位置 [0, 1, 2, ...]
-        if position_ids is None:
-            position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
-            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-
         # 如果没有传入 token_type_ids，默认为全 0
         if token_type_ids is None:
             token_type_ids = torch.zeros_like(input_ids)
 
-        # 生成三种 Embedding
+        # 词向量 + token type
         words_emb = self.word_embeddings(input_ids)
-        pos_emb = self.position_embeddings(position_ids)
         type_emb = self.token_type_embeddings(token_type_ids)
+        embeddings = words_emb + type_emb
 
-        # 核心逻辑：将三种 Embedding 相加
-        embeddings = words_emb + pos_emb + type_emb
-        
+        # RoPE 位置编码
+        pos_emb = self.rope(seq_length, device)
+        embeddings = apply_rotary_pos_emb(pos_emb, embeddings)
+
         # 最后进行归一化和 Dropout
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
-        
         return embeddings
     
 
@@ -60,106 +94,63 @@ class CMTargetModel(nn.Module):
         self.configs = configs
         self.stamp = configs['timestamp']
         self.device = configs['device']
-
-        #  2 特征融合的参数
-        # self.pro_sequence_tklen = 416         # 蛋白质序列编码的token数目  416  config['token_num_pro']
-        # self.pro_structure_tklen = 416 # 256  # 蛋白质结构编码的token数目  416
-        # self.pro_knowledge_tklen = 416 # 64   # 蛋白质知识图谱提取的token数目 416
+        
         self.pro_token_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
-
-        # self.drug_sequence_tklen = 43          # 化合物序列编码的token数目   config['token_num_drug']
-        # self.drug_structure_tklen = 43         # 化合物结构编码的token数目
-        # self.drug_knowledge_tklen = 43         # 化合物知识图谱提取的token数目 
         self.drug_token_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
-
-
-        # 3 专家编码参数
-        self.moe_emb_dim = 256
+        self.moe_emb_dim = 1024      # 3 专家编码参数
         
 
         # 4. 模型可学习参数
         self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.pro_token_dim, max_position_embeddings=506, padding_idx=0)
         self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.drug_token_dim, max_position_embeddings=222, padding_idx=1)
-        
-        # self.protein_embed = nn.Embedding(30, self.pro_token_dim, padding_idx=0) #词表大小26
-        # self.drug_embed = nn.Embedding(767, self.drug_token_dim, padding_idx=1)
-
-
-        # ===  创建linear, 避免机械使用 encoder_data;  添加归一化层，让输入更稳定  
-        self.emb_data_pro = nn.Sequential(
-            nn.Linear(self.pro_token_dim, self.pro_token_dim),
-            nn.LayerNorm(self.pro_token_dim),
-            nn.SELU()
-        )
-        # 化合物经过RobertaModel已经很规范了, 不需要只来一个linear 可学习就行
-        self.emb_data_drug = nn.Sequential(
-            nn.Linear(self.drug_token_dim, self.drug_token_dim),
-            nn.LayerNorm(self.drug_token_dim),
-            nn.SELU()
-        )
-
 
         # === 创建 fusion 模型 =====
         # self.sequence_attention_pro = EnhancedAttentionBlock(self.pro_token_dim, dropout_rate=0.1)
         # self.sequence_attention_drug = EnhancedAttentionBlock(self.drug_token_dim, dropout_rate=0.1)
-        self.sequence_attention_pro = SelfAttention(self.pro_token_dim, self.pro_token_dim, self.pro_token_dim)
-        self.sequence_attention_drug = SelfAttention(self.drug_token_dim, self.drug_token_dim, self.drug_token_dim)
-        # self.pro_fusion_model = CrossModalFusionModel(self.pro_sequence_tklen, self.pro_structure_tklen, self.pro_knowledge_tklen, self.pro_token_dim)
-        # self.drug_fusion_model = CrossModalFusionModel(self.drug_sequence_tklen, self.drug_structure_tklen, self.drug_knowledge_tklen, self.drug_token_dim)
-        
+        self.sequence_attention_pro = SelfAttention(self.pro_token_dim, 512, 512)
+        self.sequence_attention_drug = SelfAttention(self.drug_token_dim, 512, 512)
+
         # === 创建 基础专家 模型 ===
-        self.basic_pro_moe = BasicMOE(self.pro_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[100,256]
-        self.basic_drug_moe = BasicMOE(self.drug_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[768,256]
+        # self.basic_pro_moe = BasicMOE(self.pro_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[100,256]
+        # self.basic_drug_moe = BasicMOE(self.drug_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[768,256]
+        self.basic_pro_moe = Qwen2MoeSparseMoeBlock(512, self.moe_emb_dim, 6)
+        self.basic_drug_moe = Qwen2MoeSparseMoeBlock(512, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
+
         
         # === 创建 打分 模型 ===
         self.scorer = Scorer(configs, self.moe_emb_dim)
 
-        # 对所有权重做 Xavier 初始化（除了 embedding 可能已放大）
-        for p in self.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
 
     def forward(self, protein_features, drug_features):
-        """ model的前向传播
-        输入:
-            drug_features:[batch_size, token_num, token_dim] 化合物特征向量
-            protein_features : [batch_size, token_num, token_dim] 蛋白质特征向量
-        返回:
-            pro_moe_output: 蛋白质序列经过特征提取、融合、moe编码后的特征向量, 
-            drug_moe_output:化合物序列经过特征提取、融合、moe编码后的特征向量,   
-        """
         proteins = protein_features.to(self.device)#16,633,100 #128,506
         drugs = drug_features.to(self.device)#16,222,768  # 128,222
-         
-        # 1. probert_chemberta编码嵌入 → Linear避免机械使用编码 → 归一化→ padding 0, 注意力机制的掩码
+        # 掩码
         protein_mask = (proteins != 0).float().unsqueeze(1) #128,1,1200
         drug_mask = (drugs != 1).float().unsqueeze(1) # 128,1,100
 
+        # 1. wordEmbedding + PosEmbedding
         proteinembed = self.protein_embed(proteins) #128,1200   128,1200,768  #128,506,100
-        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,633,100
-        # protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
-        # pro_fused_output = self.sequence_attention_pro(protein_encoder_learn, protein_mask) #128,633,100
-        
         drugembed = self.drug_embed(drugs) #128,222   128,222,128
-        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask)
-        # drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
-        # drug_fused_output = self.sequence_attention_drug(drug_encoder_learn, drug_mask) #128,633,100
 
-        # 不要三模态
-        contrastive_Loss = 0
+        # 将embedding通过线性层处理
+        # protein_encoder_learn = self.emb_data_pro(proteinembed) # 16,633,100
+        # drug_encoder_learn = self.emb_data_drug(drugembed) # 16,222,768
+
+        # 2. 自注意力
+        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,633,100        
+        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask)
+        contrastive_Loss = 0  # 不要三模态
 
 
         # 3. 专家编码器 : 不同蛋白和化合物的token用不同专家编码 
         # 专家编码输出, moe的负载均衡损失
-        pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output) #in:[2,501,100] out:[2,501,256]  # 这里蛋白质每个token特征长得一模一样！
-        drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output) #in:[2,68,78] out:[2,68,256]
+        pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output, protein_mask) #in:[2,501,100] out:[2,501,256]
+        drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output, drug_mask) #in:[2,68,78] out:[2,68,256]
         load_balancing_loss = pro_moe_loss + drug_moe_loss     # 275 + 128    
-        
+        load_balancing_loss=0
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
         score = self.scorer.forward(pro_moe_output, drug_moe_output)
-        
-        # pro_train_loss = pro_fusion_loss + pro_moe_loss
-        # drug_train_loss = drug_fusion_loss + drug_moe_loss
+
         return score, contrastive_Loss, load_balancing_loss
     
     

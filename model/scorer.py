@@ -126,7 +126,7 @@ class Scorer(torch.nn.Module):
             self.score = Cosine(self.fea_dim)
 
     def forward(self, pro_feat, drug_feat):
-        "in:[128,633,256]  [128,222,256]"
+        "in:[128,506,512]  [128,222,768]"
         "out:[2]"
 
         # 1. 使用多头注意力，将蛋白质和化合物进行特征交互

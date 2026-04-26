@@ -37,11 +37,11 @@ def prepare():
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
     
-    parser.add_argument('--patience', type = int, default=30) 
+    parser.add_argument('--patience', type = int, default=15) 
     parser.add_argument('-score', '--score_way', type=str, default='Cosine', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
-    parser.add_argument('-s', '--source_name', type = str, default="hit")#drugbank
+    parser.add_argument('-s', '--source_name', type = str, default="drugbank")#drugbank
     parser.add_argument('-t', '--target_name', default='drugbank')
     
     parser.add_argument('--token_dim_pro', type = int, default='512')#probert=1024, w2c=100
