@@ -222,8 +222,8 @@ class CMTargetTrainer():
             recall, precision, f1, accuracy, auc, y_true, y_score, test_loss = self.model_evaluate_anepoch(self.model, i)
             
             # 日志
-            logger.write(f"Epoch [{i + 1}/{self.epochs}] Train: loss = {round(loss, 4)}, acc = {round(accuracys, 4)}")
-            logger.write(f"Epoch [{i + 1}/{self.epochs}] Test: loss = {round(test_loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}\n")
+            logger.write(f"Epoch [{i + 1}/{self.epochs}] Train_loss = {round(loss, 4)}, acc = {round(accuracys, 4)}")
+            logger.write(f"Epoch [{i + 1}/{self.epochs}] Test_loss = {round(test_loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}\n")
             logger.log_loss(loss, test_loss)
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
