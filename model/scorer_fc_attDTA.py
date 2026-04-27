@@ -108,6 +108,7 @@ class Scorer(torch.nn.Module):
     def __init__(self, configs, moe_emb_dim):
         super().__init__()
         self.fea_dim = moe_emb_dim  # pro_dim, drug_dim, 256
+        self.dropout_rate = 0.1
         # self.user_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
         # self.item_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
         
@@ -115,13 +116,16 @@ class Scorer(torch.nn.Module):
         self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
         self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
 
-        if configs['score_way'] == 'MF':
-            self.score = MF(self.fea_dim)
-        elif configs['score_way'] == 'GMF':
-            self.score = GMF(self.fea_dim)
-        elif configs['score_way'] == 'Cosine':
-            self.score = Cosine(self.fea_dim)
+        self.leaky_relu = nn.LeakyReLU()
+        self.fc1 = nn.Linear(self.fea_dim * 2, 1024)
+        self.dropout1 = nn.Dropout(self.dropout_rate)
+        self.fc2 = nn.Linear(1024, 1024)
+        self.dropout2 = nn.Dropout(self.dropout_rate)
+        self.fc3 = nn.Linear(1024, 512)
+        self.out = nn.Linear(512, 1)
 
+
+        
     def forward(self, pro_feat, drug_feat):
         "in:[128,506,512]  [128,222,768]"
         "out:[2]"
@@ -130,14 +134,23 @@ class Scorer(torch.nn.Module):
         pro_feat_mutual ,drug_feat_mutual = self.attention(pro_feat, drug_feat)
         drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
         prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        
+
         '''
         # 1. 将输入映射到同一维度
         prot_pool_feature, _ = self.user_pooling(pro_feat)  # [2,256]
         drug_pool_feature, _ = self.item_pooling(drug_feat) #[2,256]
         '''
-        
+        pair = torch.cat([drug_pool_feature,prot_pool_feature], dim=1)
+        fully1 = self.leaky_relu(self.fc1(pair))
+        fully1 = self.dropout1(fully1)
+        fully2 = self.leaky_relu(self.fc2(fully1))
+        fully2 = self.dropout2(fully2)
+        fully3 = self.leaky_relu(self.fc3(fully2))
+        predict = self.out(fully3)
+
+
+        return predict.squeeze(1)
         # 2. 预测打分
-        output = self.score(prot_pool_feature, drug_pool_feature) #[2]
+        # output = self.score(prot_pool_feature, drug_pool_feature) #[2]
         
-        return output
+        # return output

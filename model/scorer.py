@@ -38,11 +38,14 @@ class MF(torch.nn.Module):
 class Cosine(torch.nn.Module):
     def __init__(self, emb_dim):
         super().__init__()
+        # self.temp = nn.Parameter(torch.tensor([10.0]))
 
     def forward(self, user_embedding, item_embedding):
         output = torch.cosine_similarity(user_embedding, item_embedding, dim=1)
         # output = torch.sigmoid(output)
+        # output = cos * self.temp
         return output
+
 
 
 
@@ -77,8 +80,8 @@ class mutil_head_attention(nn.Module):
         # self.d_a = nn.Linear(self.conv * 3, self.conv * 3 * head)
         # self.p_a = nn.Linear(self.conv * 3, self.conv * 3 * head)
         # self.scale = torch.sqrt(torch.FloatTensor([self.conv * 3])).cuda()
-        self.d_a = nn.Linear(self.conv, self.conv * head)
-        self.p_a = nn.Linear(self.conv, self.conv* head)
+        self.d_a = nn.Linear(self.conv, self.conv * self.head)
+        self.p_a = nn.Linear(self.conv, self.conv* self.head)
         self.scale = torch.sqrt(torch.FloatTensor([self.conv])).cuda()
 
     def forward(self, drug, protein):
@@ -108,49 +111,73 @@ class Scorer(torch.nn.Module):
     def __init__(self, configs, moe_emb_dim):
         super().__init__()
         self.fea_dim = moe_emb_dim  # pro_dim, drug_dim, 256
-        self.dropout_rate = 0.1
-        # self.user_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
-        # self.item_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
-        
+        self.emb_dim = self.fea_dim
+
         self.attention = mutil_head_attention(head = 8, conv=self.fea_dim)
-        self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
-        self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
+        # self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
+        # self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
+        # self.Drug_avg_pool = nn.AdaptiveAvgPool1d(1)
+        # self.Protein_avg_pool = nn.AdaptiveAvgPool1d(1)
 
-        self.leaky_relu = nn.LeakyReLU()
-        self.fc1 = nn.Linear(self.fea_dim * 2, 1024)
-        self.dropout1 = nn.Dropout(self.dropout_rate)
-        self.fc2 = nn.Linear(1024, 1024)
-        self.dropout2 = nn.Dropout(self.dropout_rate)
-        self.fc3 = nn.Linear(1024, 512)
-        self.out = nn.Linear(512, 1)
+        self.user_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
+        self.item_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
+        
 
+        if configs['score_way'] == 'MF':
+            self.score = MF(self.fea_dim)
+        elif configs['score_way'] == 'GMF':
+            self.score = GMF(self.fea_dim)
+        elif configs['score_way'] == 'Cosine':
+            self.score = Cosine(self.fea_dim)
+        # elif configs['score_way'] == 'MLP':#[直接排除]
+        #     self.score = nn.Sequential(
+        #         nn.Linear(self.fea_dim*4, 1024),
+        #         nn.ReLU(),
+        #         nn.Dropout(0.2),
+        #         nn.Linear(1024, 512),
+        #         nn.ReLU(),
+        #         nn.Linear(512, 1) # 输出打分
+        #     )
+        # elif configs['score_way'] == 'bilinear':
+        #      # score = x^T * W * y
+        #     self.score = nn.Bilinear(in1_features=self.fea_dim, in2_features=self.fea_dim, out_features=1)
 
         
+
     def forward(self, pro_feat, drug_feat):
         "in:[128,506,512]  [128,222,768]"
         "out:[2]"
 
         # 1. 使用多头注意力，将蛋白质和化合物进行特征交互
         pro_feat_mutual ,drug_feat_mutual = self.attention(pro_feat, drug_feat)
-        drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-
-        '''
-        # 1. 将输入映射到同一维度
-        prot_pool_feature, _ = self.user_pooling(pro_feat)  # [2,256]
-        drug_pool_feature, _ = self.item_pooling(drug_feat) #[2,256]
-        '''
-        pair = torch.cat([drug_pool_feature,prot_pool_feature], dim=1)
-        fully1 = self.leaky_relu(self.fc1(pair))
-        fully1 = self.dropout1(fully1)
-        fully2 = self.leaky_relu(self.fc2(fully1))
-        fully2 = self.dropout2(fully2)
-        fully3 = self.leaky_relu(self.fc3(fully2))
-        predict = self.out(fully3)
-
-
-        return predict.squeeze(1)
-        # 2. 预测打分
-        # output = self.score(prot_pool_feature, drug_pool_feature) #[2]
         
-        # return output
+        """
+        # drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
+        # prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
+        
+        # --- 药物特征池化 ---
+        drug_max = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
+        drug_avg = self.Drug_avg_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
+        # 拼接后的维度将是原来的 2 倍
+        drug_pool_feature = torch.cat([drug_max, drug_avg], dim=1)
+        # --- 蛋白质特征池化 ---
+        prot_max = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
+        prot_avg = self.Protein_avg_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
+        # 拼接后的维度将是原来的 2 倍
+        prot_pool_feature = torch.cat([prot_max, prot_avg], dim=1)
+        """
+
+        # 1. 将输入映射到同一维度
+        prot_pool_feature, _ = self.user_pooling(pro_feat_mutual)  # [2,256]
+        drug_pool_feature, _ = self.item_pooling(drug_feat_mutual) #[2,256]
+        
+
+        # 2. 预测打分
+        output = self.score(prot_pool_feature, drug_pool_feature) #[2]
+        
+        # MLP
+        # combined = torch.cat([drug_pool_feature, prot_pool_feature], dim=1) # 维度: [B, 512]
+        # score = self.classifier(combined)
+        
+        return output
+

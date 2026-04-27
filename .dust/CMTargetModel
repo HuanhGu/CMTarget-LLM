@@ -1,0 +1,85 @@
+CMTargetModel(
+  (protein_embed): BertEmbeddings(
+    (word_embeddings): Embedding(30, 512, padding_idx=0)
+    (token_type_embeddings): Embedding(1, 512)
+    (rope): RotaryPositionEmbedding()
+    (LayerNorm): RMSNorm()
+    (dropout): Dropout(p=0.1, inplace=False)
+  )
+  (drug_embed): BertEmbeddings(
+    (word_embeddings): Embedding(767, 512, padding_idx=1)
+    (token_type_embeddings): Embedding(1, 512)
+    (rope): RotaryPositionEmbedding()
+    (LayerNorm): RMSNorm()
+    (dropout): Dropout(p=0.1, inplace=False)
+  )
+  (sequence_attention_pro): SelfAttention(
+    (W_Q): Linear(in_features=512, out_features=512, bias=True)
+    (W_K): Linear(in_features=512, out_features=512, bias=True)
+    (W_V): Linear(in_features=512, out_features=512, bias=True)
+  )
+  (sequence_attention_drug): SelfAttention(
+    (W_Q): Linear(in_features=512, out_features=512, bias=True)
+    (W_K): Linear(in_features=512, out_features=512, bias=True)
+    (W_V): Linear(in_features=512, out_features=512, bias=True)
+  )
+  (basic_pro_moe): Qwen2MoeSparseMoeBlock(
+    (gate): Sequential(
+      (0): Linear(in_features=512, out_features=6, bias=False)
+    )
+    (experts): ModuleList(
+      (0-5): 6 x Qwen2MoeMLP(
+        (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
+        (up_proj): Linear(in_features=512, out_features=1024, bias=False)
+        (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+        (act_fn): SiLU()
+      )
+    )
+    (shared_expert): Qwen2MoeMLP(
+      (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
+      (up_proj): Linear(in_features=512, out_features=1024, bias=False)
+      (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+      (act_fn): SiLU()
+    )
+    (shared_expert_gate): Linear(in_features=512, out_features=1, bias=False)
+    (dropout): Dropout(p=0.3, inplace=False)
+  )
+  (basic_drug_moe): Qwen2MoeSparseMoeBlock(
+    (gate): Sequential(
+      (0): Linear(in_features=512, out_features=6, bias=False)
+    )
+    (experts): ModuleList(
+      (0-5): 6 x Qwen2MoeMLP(
+        (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
+        (up_proj): Linear(in_features=512, out_features=1024, bias=False)
+        (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+        (act_fn): SiLU()
+      )
+    )
+    (shared_expert): Qwen2MoeMLP(
+      (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
+      (up_proj): Linear(in_features=512, out_features=1024, bias=False)
+      (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+      (act_fn): SiLU()
+    )
+    (shared_expert_gate): Linear(in_features=512, out_features=1, bias=False)
+    (dropout): Dropout(p=0.3, inplace=False)
+  )
+  (scorer): Scorer(
+    (attention): mutil_head_attention(
+      (relu): ReLU()
+      (tanh): Tanh()
+      (d_a): Linear(in_features=512, out_features=4096, bias=True)
+      (p_a): Linear(in_features=512, out_features=4096, bias=True)
+    )
+    (user_pooling): SelfAttentionPooling(
+      (tune_linear1): Linear(in_features=512, out_features=512, bias=True)
+      (linear2): Linear(in_features=512, out_features=1, bias=True)
+    )
+    (item_pooling): SelfAttentionPooling(
+      (tune_linear1): Linear(in_features=512, out_features=512, bias=True)
+      (linear2): Linear(in_features=512, out_features=1, bias=True)
+    )
+    (score): Cosine()
+  )
+)

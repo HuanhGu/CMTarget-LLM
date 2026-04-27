@@ -101,7 +101,7 @@ class CMTargetModel(nn.Module):
 
         # 4. 模型可学习参数
         self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.pro_hid_dim, max_position_embeddings=506, padding_idx=0)
-        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.pro_hid_dim, max_position_embeddings=222, padding_idx=1)
+        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.drug_hid_dim, max_position_embeddings=222, padding_idx=1)
 
         # === 创建 fusion 模型 =====
         # self.sequence_attention_pro = EnhancedAttentionBlock(self.pro_hid_dim, dropout_rate=0.1)

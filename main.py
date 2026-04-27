@@ -32,7 +32,7 @@ def prepare():
     parser.add_argument('--checkpoint_interval', type=int, default=10)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
-    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 5e-4)
+    parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 5e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 0.05)
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")

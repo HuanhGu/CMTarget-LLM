@@ -76,7 +76,7 @@ class CMTargetTrainer():
             " 1. 读取序列数据集 "
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
-            d_df = d_df.sample(n=4499, random_state=42)  # random_state 保证可复现
+            d_df = d_df[:4499] 
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 
@@ -104,7 +104,7 @@ class CMTargetTrainer():
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
         "量级 : [27+2+0.68]"
         # 19 + 2 + 0.6930[27+2+0.68]
-        loss_list = torch.stack([load_balancing_loss, pred_loss])
+        loss_list = torch.stack([load_balancing_loss*0.05, pred_loss])
         loss = self.loss_balancer(loss_list)
         return loss
 
@@ -152,7 +152,7 @@ class CMTargetTrainer():
         avg_loss = np.average(running_loss)
         accuracy = correct / total * 100
         print(f"🚂 Train Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
-        return avg_loss
+        return avg_loss, accuracy
 
 
 
@@ -178,6 +178,8 @@ class CMTargetTrainer():
                 logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
                 label_batch = label_batch.to(self.device)
                 pred_loss = self.criterion(logits, label_batch)
+                # 如果你外接了 nn.BCEWithLogitsLoss（它内部带 Sigmoid），
+                # 那么 $\text{Sigmoid}(0.2) \approx 0.55$，$\text{Sigmoid}(0.7) \approx 0.67$。
                 
                 loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
                 running_loss.append(loss.item())
@@ -216,11 +218,12 @@ class CMTargetTrainer():
 
         for i in range(self.epochs):
             # 模型训练与评估
-            loss = self.model_train_anepoch(self.model, i)
+            loss, accuracys = self.model_train_anepoch(self.model, i)
             recall, precision, f1, accuracy, auc, y_true, y_score, test_loss = self.model_evaluate_anepoch(self.model, i)
             
             # 日志
-            logger.write(f"Epoch [{i + 1}/{self.epochs}]: loss = {round(loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}")
+            logger.write(f"Epoch [{i + 1}/{self.epochs}] Train: loss = {round(loss, 4)}, acc = {round(accuracys, 4)}")
+            logger.write(f"Epoch [{i + 1}/{self.epochs}] Test: loss = {round(test_loss, 4)}, recall = {round(recall, 4)}, precision = {round(precision, 4)}, f1 = {round(f1, 4)}, accuracy = {round(accuracy, 4)}, auc = {round(auc, 4)}\n")
             logger.log_loss(loss, test_loss)
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
