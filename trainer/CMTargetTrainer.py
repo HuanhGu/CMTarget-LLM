@@ -239,6 +239,13 @@ class CMTargetTrainer():
                 print(f"📊 Early stopping triggered. Best F1: {max_f1}")
                 break
             
+            # 每隔一定轮数, 保存 checkpoint
+            if (i + 1) % self.checkpoint_interval == 0:
+                checkpoint_dir = os.path.join('logs', self.configs['timestamp'], 'checkpoints')
+                os.makedirs(checkpoint_dir, exist_ok=True)
+                checkpoint_path = os.path.join(checkpoint_dir, f"pretrain_checkpoint_epoch{i+1}.pt")
+                self.model.save_model(checkpoint_path)
+                print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
 
         print(f"\n✅ preTraining finished, model has been saved to {output_path}")
         

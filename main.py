@@ -29,7 +29,7 @@ def prepare():
 
     parser.add_argument('-bs', '--batch_size', type = int, default = 128)
 
-    parser.add_argument('--checkpoint_interval', type=int, default=10)
+    parser.add_argument('--checkpoint_interval', type=int, default=30)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
@@ -37,7 +37,7 @@ def prepare():
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="")
     
-    parser.add_argument('--patience', type = int, default=15) 
+    parser.add_argument('--patience', type = int, default=100) 
     parser.add_argument('-score', '--score_way', type=str, default='Cosine', 
                         help="choose a scorer, MF,GMF,Cosine ")
     
@@ -147,4 +147,8 @@ kill -9 <PID>
 nohup python -u main.py > main_0317_1300.log 2>&1 &
 tail -f main_0317_1300.log
 ps -ef | grep main.py
+
+
+nohup python -u main.py > main_0428_2330.log 2>&1 &
+tail -f main_0428_2330.log
 """

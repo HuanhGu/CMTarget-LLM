@@ -3,10 +3,15 @@ import torch
 import torch.optim as optim
 from tqdm import tqdm
 import os
+import h5py
+from torchinfo import summary
+from pathlib import Path
+
+import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from embedding.FeatureExtract import FeatureExtractor
-# from embedding.dataset import *
+from embedding.dataset import *
 from model.CMTargetModel import CMTargetModel
 from model.multi_fusion import *
 from model.moe import *
@@ -14,9 +19,8 @@ from utils.metrix import *
 from utils.utils import TrainLogger, PredictLogger, MultiTaskLossWrapper
 
 from peft import LoraConfig, get_peft_model
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, random_split
 
-import h5py
 '''
 1. ⚠️ 注意：如果 linear2 是输出层（例如 [hidden → 1]），低秩矩阵的作用可能有限，因为矩阵很小。
 这种方式是不使用 LoRA，直接微调原始权重
@@ -45,45 +49,61 @@ class FineTunner():
 
         self.model = self.get_model(model_path)
 
+        self.train_loader,self.test_loader = self.get_dataloader(source_name) #样本 3599, 29
 
-        train_encoder_path = Path('data') / 'encoder' / target_name / 'encoder_80pct.h5'
-        test_encoder_path = Path('data') / 'encoder' / target_name / 'encoder_20pct.h5'
+        # train_encoder_path = Path('data') / 'encoder' / target_name / 'encoder_80pct.h5'
+        # test_encoder_path = Path('data') / 'encoder' / target_name / 'encoder_20pct.h5'
 
-        self.train_loader = self.get_dataloader(train_encoder_path)
-        self.test_loader = self.get_dataloader(test_encoder_path)
-
-
-        self.loss_balancer = MultiTaskLossWrapper(task_num=3) # loss均衡器
-        self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-
-        # self.optimizer = optim.Adam(
-        #     [
-        #         {'params': self.model.parameters()},
-        #         {'params': self.loss_balancer.parameters(),'lr': self.learning_rate * 0.1}#使用较小的lr
-        #     ],
-        #     lr=self.learning_rate
-        # )
+        # self.train_loader = self.get_dataloader(train_encoder_path)
+        # self.test_loader = self.get_dataloader(test_encoder_path)
 
 
-    def get_dataloader(self, train_encoder_path):
-        # 判断文件类型
-        file_ext = os.path.splitext(train_encoder_path)[-1].lower()
+        self.loss_balancer = MultiTaskLossWrapper(task_num=2).to(self.device) # loss均衡器
+        self.criterion = nn.BCEWithLogitsLoss()  # 使用二分类交叉熵损失函数
+        
+        
+        weight_p, bias_p = [], []
+        for name, p in self.model.named_parameters():
+            if 'bias' in name:
+                bias_p += [p]
+            else:
+                weight_p += [p]
+        balancer_params = list(self.loss_balancer.parameters())
+        
 
-        if file_ext in ['.h5', '.hdf5']:
-            with h5py.File(train_encoder_path, "r") as f:
-                protein = torch.tensor(f["protein"][:], dtype=torch.float32)
-                drug = torch.tensor(f["drug"][:], dtype=torch.float32)
-                label = torch.tensor(f["label"][:], dtype=torch.float32)
-            dataset = TensorDataset(protein, drug, label)
-        elif file_ext in ['.pt', '.pth']:
-            checkpoint = torch.load(train_encoder_path)
-            dataset = TensorDataset(checkpoint["protein"], checkpoint["drug"], checkpoint["label"])
-        else:
-            print("there are no encoder files, please execute feature_save.py")
+        self.optimizer = optim.AdamW([
+            {'params': weight_p, 'weight_decay': 1e-4}, 
+            {'params': bias_p, 'weight_decay': 0},
+            {'params': balancer_params, 'lr': self.learning_rate} # 给 balancer 专门开一组
+        ], lr=self.learning_rate)
+        
+        self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
+                                                cycle_momentum=False,
+                                                step_size_up=len(self.train_loader))
 
-        val_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
-        return val_loader
+
+
+    def get_dataloader(self, dataname="hit"):
+            """ 得到分词结果 """
+
+            " 1. 读取序列数据集 "
+            csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
+            d_df = pd.read_csv(csv_path) 
+            d_df = d_df[:4499] 
+            "特征提取"
+            full_dataset = DTIDataset(d_df)       # drug,pro,label
+
+            "数据集划分"
+            total_size = len(full_dataset)
+            train_size = int(0.8 * total_size)
+            test_size = total_size - train_size
+            train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+
+            "得到dataloader"
+            train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
+            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
+            
+            return train_load, test_load
 
 
     def get_model(self, model_path):
