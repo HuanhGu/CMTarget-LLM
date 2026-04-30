@@ -76,7 +76,7 @@ class CMTargetTrainer():
             " 1. 读取序列数据集 "
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
-            d_df = d_df[:4499] 
+            # d_df = d_df[:4499] 
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 
@@ -89,6 +89,7 @@ class CMTargetTrainer():
             "得到dataloader"
             train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
             test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
+            print(f"总数据数目:{len(total_size)}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
             
             return train_load, test_load
 
@@ -102,8 +103,7 @@ class CMTargetTrainer():
     
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
-        "量级 : [27+2+0.68]"
-        # 19 + 2 + 0.6930[27+2+0.68]
+
         loss_list = torch.stack([load_balancing_loss*0.05, pred_loss])
         loss = self.loss_balancer(loss_list)
         return loss
@@ -117,7 +117,7 @@ class CMTargetTrainer():
         total = 0
         
         # [smiles, seq, label]
-        pbar = tqdm(self.train_loader, desc="Training", leave=True, ncols=100)
+        pbar = tqdm(self.train_loader, desc="🚂 Training", leave=True, ncols=100)
         for compound_batch, protein_batch, label_batch in pbar:        
 
             # 清空梯度
@@ -151,7 +151,7 @@ class CMTargetTrainer():
 
         avg_loss = np.average(running_loss)
         accuracy = correct / total * 100
-        print(f"🚂 Train Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
+        print(f"Train Epoch [{epoch_id+1}/{self.epochs}], Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%") 
         return avg_loss, accuracy
 
 
@@ -248,20 +248,3 @@ class CMTargetTrainer():
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
 
         print(f"\n✅ preTraining finished, model has been saved to {output_path}")
-        
-
-
-
-
-
-"""
-
-            # 每隔一定轮数, 保存 checkpoint
-            if (i + 1) % self.checkpoint_interval == 0:
-                checkpoint_dir = os.path.join('logs', self.configs['timestamp'], 'checkpoints')
-                os.makedirs(checkpoint_dir, exist_ok=True)
-                checkpoint_path = os.path.join(checkpoint_dir, f"pretrain_checkpoint_epoch{i+1}.pt")
-                self.model.save_model(checkpoint_path)
-                print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
-
-"""

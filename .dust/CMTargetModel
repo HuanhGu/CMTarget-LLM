@@ -13,6 +13,7 @@ CMTargetModel(
     (LayerNorm): RMSNorm()
     (dropout): Dropout(p=0.1, inplace=False)
   )
+  
   (sequence_attention_pro): SelfAttention(
     (W_Q): Linear(in_features=512, out_features=512, bias=True)
     (W_K): Linear(in_features=512, out_features=512, bias=True)
