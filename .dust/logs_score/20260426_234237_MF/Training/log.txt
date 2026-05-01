@@ -1,4 +1,0 @@
-Epoch [1/300]: loss = 9.2128, recall = 0.0, precision = 0.0, f1 = 0.0, accuracy = 0.5089, auc = 0.5
-Epoch [2/300]: loss = 4.7572, recall = 0.0, precision = 0.0, f1 = 0.0, accuracy = 0.5089, auc = 0.5
-Epoch [3/300]: loss = 4.1917, recall = 0.0, precision = 0.0, f1 = 0.0, accuracy = 0.5089, auc = 0.5
-[BEST] recall = 0, precision = 0, f1 = 0, accuracy =0, auc = 0
