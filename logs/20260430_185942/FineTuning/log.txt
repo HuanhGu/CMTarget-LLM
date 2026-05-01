@@ -1,0 +1,322 @@
+Epoch [1/200] Train_loss = 0.9451, acc = 53.9594
+Epoch [1/200] Test_loss = 0.9869, recall = 0.407, precision = 0.5407, f1 = 0.4643, accuracy = 0.5265, auc = 0.5274
+
+Epoch [2/200] Train_loss = 0.9467, acc = 54.015
+Epoch [2/200] Test_loss = 0.9583, recall = 0.4076, precision = 0.5425, f1 = 0.4654, accuracy = 0.5176, auc = 0.5206
+
+Epoch [3/200] Train_loss = 0.9446, acc = 53.7649
+Epoch [3/200] Test_loss = 0.9811, recall = 0.3908, precision = 0.5463, f1 = 0.4547, accuracy = 0.528, auc = 0.529
+
+Epoch [4/200] Train_loss = 0.9414, acc = 54.3484
+Epoch [4/200] Test_loss = 0.9804, recall = 0.3944, precision = 0.5316, f1 = 0.4527, accuracy = 0.5189, auc = 0.52
+
+Epoch [5/200] Train_loss = 0.9525, acc = 52.7924
+Epoch [5/200] Test_loss = 0.9547, recall = 0.4127, precision = 0.5112, f1 = 0.4563, accuracy = 0.5026, auc = 0.5035
+
+Epoch [6/200] Train_loss = 0.9422, acc = 54.015
+Epoch [6/200] Test_loss = 0.9555, recall = 0.399, precision = 0.5285, f1 = 0.4547, accuracy = 0.5207, auc = 0.5207
+
+Epoch [7/200] Train_loss = 0.9442, acc = 53.6816
+Epoch [7/200] Test_loss = 0.9774, recall = 0.4031, precision = 0.5234, f1 = 0.4553, accuracy = 0.5356, auc = 0.5307
+
+Epoch [8/200] Train_loss = 0.9418, acc = 53.3759
+Epoch [8/200] Test_loss = 0.9909, recall = 0.3917, precision = 0.5368, f1 = 0.4527, accuracy = 0.5073, auc = 0.512
+
+Epoch [9/200] Train_loss = 0.9422, acc = 53.5149
+Epoch [9/200] Test_loss = 1.0047, recall = 0.4057, precision = 0.5193, f1 = 0.4553, accuracy = 0.5173, auc = 0.5166
+
+Epoch [10/200] Train_loss = 0.9321, acc = 53.7927
+Epoch [10/200] Test_loss = 0.953, recall = 0.4235, precision = 0.5285, f1 = 0.47, accuracy = 0.5214, auc = 0.5217
+
+Epoch [11/200] Train_loss = 0.9437, acc = 53.0147
+Epoch [11/200] Test_loss = 0.9466, recall = 0.4464, precision = 0.5524, f1 = 0.4935, accuracy = 0.53, auc = 0.5321
+
+Epoch [12/200] Train_loss = 0.9337, acc = 53.5149
+Epoch [12/200] Test_loss = 0.959, recall = 0.4333, precision = 0.5271, f1 = 0.4754, accuracy = 0.5241, auc = 0.5239
+
+Epoch [13/200] Train_loss = 0.9238, acc = 54.3484
+Epoch [13/200] Test_loss = 0.9408, recall = 0.4089, precision = 0.5295, f1 = 0.4613, accuracy = 0.5174, auc = 0.5185
+
+Epoch [14/200] Train_loss = 0.9305, acc = 53.8761
+Epoch [14/200] Test_loss = 0.9927, recall = 0.4257, precision = 0.5233, f1 = 0.4694, accuracy = 0.5073, auc = 0.5092
+
+Epoch [15/200] Train_loss = 0.9288, acc = 53.5704
+Epoch [15/200] Test_loss = 0.9801, recall = 0.46, precision = 0.5392, f1 = 0.4964, accuracy = 0.5375, auc = 0.5366
+
+Epoch [16/200] Train_loss = 0.9331, acc = 53.3759
+Epoch [16/200] Test_loss = 0.9325, recall = 0.4487, precision = 0.566, f1 = 0.5003, accuracy = 0.5276, auc = 0.5323
+
+Epoch [17/200] Train_loss = 0.927, acc = 54.7096
+Epoch [17/200] Test_loss = 0.9668, recall = 0.4396, precision = 0.5192, f1 = 0.4758, accuracy = 0.5202, auc = 0.5196
+
+Epoch [18/200] Train_loss = 0.9223, acc = 54.404
+Epoch [18/200] Test_loss = 0.9686, recall = 0.4591, precision = 0.53, f1 = 0.4919, accuracy = 0.5236, auc = 0.524
+
+Epoch [19/200] Train_loss = 0.9188, acc = 54.5985
+Epoch [19/200] Test_loss = 0.9359, recall = 0.4628, precision = 0.5439, f1 = 0.5, accuracy = 0.5383, auc = 0.5379
+
+Epoch [20/200] Train_loss = 0.9201, acc = 54.9597
+Epoch [20/200] Test_loss = 0.9329, recall = 0.4774, precision = 0.5483, f1 = 0.5103, accuracy = 0.5438, auc = 0.5435
+
+Epoch [21/200] Train_loss = 0.9164, acc = 55.4321
+Epoch [21/200] Test_loss = 0.9662, recall = 0.4863, precision = 0.5402, f1 = 0.5118, accuracy = 0.5364, auc = 0.5363
+
+Epoch [22/200] Train_loss = 0.9261, acc = 54.4874
+Epoch [22/200] Test_loss = 0.985, recall = 0.4446, precision = 0.5069, f1 = 0.4737, accuracy = 0.4927, auc = 0.494
+
+Epoch [23/200] Train_loss = 0.9201, acc = 54.793
+Epoch [23/200] Test_loss = 0.9429, recall = 0.49, precision = 0.5447, f1 = 0.5156, accuracy = 0.5342, auc = 0.5349
+
+Epoch [24/200] Train_loss = 0.9156, acc = 54.3762
+Epoch [24/200] Test_loss = 0.9197, recall = 0.4826, precision = 0.5229, f1 = 0.5019, accuracy = 0.5212, auc = 0.5212
+
+Epoch [25/200] Train_loss = 0.9108, acc = 54.4318
+Epoch [25/200] Test_loss = 0.9834, recall = 0.4772, precision = 0.5281, f1 = 0.5013, accuracy = 0.5222, auc = 0.5224
+
+Epoch [26/200] Train_loss = 0.9189, acc = 54.3762
+Epoch [26/200] Test_loss = 0.9557, recall = 0.4993, precision = 0.5227, f1 = 0.5104, accuracy = 0.5151, auc = 0.5155
+
+Epoch [27/200] Train_loss = 0.912, acc = 54.5985
+Epoch [27/200] Test_loss = 0.948, recall = 0.4865, precision = 0.5113, f1 = 0.4984, accuracy = 0.5181, auc = 0.5174
+
+Epoch [28/200] Train_loss = 0.9177, acc = 54.0984
+Epoch [28/200] Test_loss = 0.9272, recall = 0.5155, precision = 0.5327, f1 = 0.5239, accuracy = 0.525, auc = 0.5249
+
+Epoch [29/200] Train_loss = 0.9159, acc = 55.0986
+Epoch [29/200] Test_loss = 0.9777, recall = 0.5117, precision = 0.5402, f1 = 0.5255, accuracy = 0.5288, auc = 0.5291
+
+Epoch [30/200] Train_loss = 0.9144, acc = 54.9597
+Epoch [30/200] Test_loss = 0.9464, recall = 0.5087, precision = 0.5474, f1 = 0.527, accuracy = 0.5348, auc = 0.5356
+
+Epoch [31/200] Train_loss = 0.9151, acc = 54.1817
+Epoch [31/200] Test_loss = 0.8956, recall = 0.5004, precision = 0.5652, f1 = 0.5297, accuracy = 0.5277, auc = 0.5307
+
+Epoch [32/200] Train_loss = 0.9083, acc = 55.0986
+Epoch [32/200] Test_loss = 0.9414, recall = 0.5345, precision = 0.5434, f1 = 0.5385, accuracy = 0.5349, auc = 0.5352
+
+Epoch [33/200] Train_loss = 0.9189, acc = 54.7096
+Epoch [33/200] Test_loss = 0.9211, recall = 0.5011, precision = 0.5196, f1 = 0.51, accuracy = 0.5202, auc = 0.5202
+
+Epoch [34/200] Train_loss = 0.9133, acc = 54.3484
+Epoch [34/200] Test_loss = 0.918, recall = 0.527, precision = 0.5443, f1 = 0.5352, accuracy = 0.5346, auc = 0.535
+
+Epoch [35/200] Train_loss = 0.9078, acc = 55.4043
+Epoch [35/200] Test_loss = 0.9714, recall = 0.5429, precision = 0.5511, f1 = 0.5469, accuracy = 0.5444, auc = 0.5443
+
+Epoch [36/200] Train_loss = 0.9121, acc = 54.6819
+Epoch [36/200] Test_loss = 0.9378, recall = 0.5425, precision = 0.546, f1 = 0.5442, accuracy = 0.5379, auc = 0.5377
+
+Epoch [37/200] Train_loss = 0.904, acc = 56.2934
+Epoch [37/200] Test_loss = 0.9472, recall = 0.5271, precision = 0.5528, f1 = 0.5395, accuracy = 0.5325, auc = 0.5329
+
+Epoch [38/200] Train_loss = 0.9001, acc = 55.7655
+Epoch [38/200] Test_loss = 0.9409, recall = 0.5551, precision = 0.5524, f1 = 0.5535, accuracy = 0.5426, auc = 0.5426
+
+Epoch [39/200] Train_loss = 0.902, acc = 55.2098
+Epoch [39/200] Test_loss = 1.0008, recall = 0.5624, precision = 0.5358, f1 = 0.5486, accuracy = 0.5342, auc = 0.534
+
+Epoch [40/200] Train_loss = 0.9072, acc = 54.6263
+Epoch [40/200] Test_loss = 0.9064, recall = 0.5623, precision = 0.5471, f1 = 0.5545, accuracy = 0.5502, auc = 0.5496
+
+Epoch [41/200] Train_loss = 0.9017, acc = 55.571
+Epoch [41/200] Test_loss = 0.9301, recall = 0.5642, precision = 0.5517, f1 = 0.5578, accuracy = 0.5387, auc = 0.5378
+
+Epoch [42/200] Train_loss = 0.9116, acc = 54.1261
+Epoch [42/200] Test_loss = 0.9169, recall = 0.5641, precision = 0.5193, f1 = 0.5406, accuracy = 0.5298, auc = 0.5306
+
+Epoch [43/200] Train_loss = 0.902, acc = 55.6543
+Epoch [43/200] Test_loss = 0.9309, recall = 0.5821, precision = 0.5509, f1 = 0.5656, accuracy = 0.5466, auc = 0.5464
+
+Epoch [44/200] Train_loss = 0.8976, acc = 55.0709
+Epoch [44/200] Test_loss = 0.9531, recall = 0.5408, precision = 0.5104, f1 = 0.525, accuracy = 0.5123, auc = 0.5121
+
+Epoch [45/200] Train_loss = 0.8992, acc = 54.8764
+Epoch [45/200] Test_loss = 0.9108, recall = 0.5906, precision = 0.5531, f1 = 0.5712, accuracy = 0.5486, auc = 0.5478
+
+Epoch [46/200] Train_loss = 0.8873, acc = 56.5713
+Epoch [46/200] Test_loss = 0.9514, recall = 0.5544, precision = 0.5355, f1 = 0.5447, accuracy = 0.5296, auc = 0.5291
+
+Epoch [47/200] Train_loss = 0.8985, acc = 54.5985
+Epoch [47/200] Test_loss = 0.9426, recall = 0.5546, precision = 0.5312, f1 = 0.5425, accuracy = 0.5313, auc = 0.5313
+
+Epoch [48/200] Train_loss = 0.8963, acc = 55.2376
+Epoch [48/200] Test_loss = 0.9155, recall = 0.559, precision = 0.5257, f1 = 0.5416, accuracy = 0.5164, auc = 0.5153
+
+Epoch [49/200] Train_loss = 0.8988, acc = 55.2654
+Epoch [49/200] Test_loss = 0.934, recall = 0.5825, precision = 0.5282, f1 = 0.5539, accuracy = 0.5331, auc = 0.5334
+
+Epoch [50/200] Train_loss = 0.8969, acc = 55.4876
+Epoch [50/200] Test_loss = 0.9247, recall = 0.5718, precision = 0.5473, f1 = 0.5592, accuracy = 0.5304, auc = 0.5284
+
+Epoch [51/200] Train_loss = 0.8965, acc = 55.8488
+Epoch [51/200] Test_loss = 0.9172, recall = 0.5806, precision = 0.5167, f1 = 0.5463, accuracy = 0.5156, auc = 0.5156
+
+Epoch [52/200] Train_loss = 0.8899, acc = 56.6268
+Epoch [52/200] Test_loss = 0.9795, recall = 0.5653, precision = 0.5222, f1 = 0.5428, accuracy = 0.5315, auc = 0.5317
+
+Epoch [53/200] Train_loss = 0.8836, acc = 57.2103
+Epoch [53/200] Test_loss = 0.9381, recall = 0.5702, precision = 0.5474, f1 = 0.5585, accuracy = 0.5411, auc = 0.5403
+
+Epoch [54/200] Train_loss = 0.888, acc = 56.2378
+Epoch [54/200] Test_loss = 0.9327, recall = 0.5841, precision = 0.5414, f1 = 0.5613, accuracy = 0.5394, auc = 0.5393
+
+Epoch [55/200] Train_loss = 0.8873, acc = 55.7377
+Epoch [55/200] Test_loss = 0.8811, recall = 0.6069, precision = 0.5572, f1 = 0.5809, accuracy = 0.5529, auc = 0.5514
+
+Epoch [56/200] Train_loss = 0.8958, acc = 56.1267
+Epoch [56/200] Test_loss = 0.9418, recall = 0.5806, precision = 0.5187, f1 = 0.5476, accuracy = 0.5262, auc = 0.5271
+
+Epoch [57/200] Train_loss = 0.8898, acc = 56.0711
+Epoch [57/200] Test_loss = 0.9162, recall = 0.5748, precision = 0.507, f1 = 0.5381, accuracy = 0.5306, auc = 0.5327
+
+Epoch [58/200] Train_loss = 0.8951, acc = 55.6543
+Epoch [58/200] Test_loss = 0.9523, recall = 0.5325, precision = 0.5045, f1 = 0.5181, accuracy = 0.4986, auc = 0.4981
+
+Epoch [59/200] Train_loss = 0.8836, acc = 56.3768
+Epoch [59/200] Test_loss = 0.9281, recall = 0.5626, precision = 0.5162, f1 = 0.538, accuracy = 0.5203, auc = 0.5207
+
+Epoch [60/200] Train_loss = 0.8878, acc = 54.9875
+Epoch [60/200] Test_loss = 0.9224, recall = 0.5657, precision = 0.5199, f1 = 0.5418, accuracy = 0.528, auc = 0.5285
+
+Epoch [61/200] Train_loss = 0.8919, acc = 55.8211
+Epoch [61/200] Test_loss = 0.9228, recall = 0.5631, precision = 0.5494, f1 = 0.556, accuracy = 0.5377, auc = 0.5371
+
+Epoch [62/200] Train_loss = 0.8838, acc = 56.8769
+Epoch [62/200] Test_loss = 0.9514, recall = 0.5938, precision = 0.5494, f1 = 0.5706, accuracy = 0.5422, auc = 0.5407
+
+Epoch [63/200] Train_loss = 0.882, acc = 56.8213
+Epoch [63/200] Test_loss = 0.9183, recall = 0.5744, precision = 0.5236, f1 = 0.547, accuracy = 0.5381, auc = 0.5395
+
+Epoch [64/200] Train_loss = 0.8899, acc = 56.2656
+Epoch [64/200] Test_loss = 0.884, recall = 0.5492, precision = 0.5238, f1 = 0.5362, accuracy = 0.5123, auc = 0.5105
+
+Epoch [65/200] Train_loss = 0.8816, acc = 55.9044
+Epoch [65/200] Test_loss = 0.9259, recall = 0.5475, precision = 0.5278, f1 = 0.5373, accuracy = 0.5298, auc = 0.5296
+
+Epoch [66/200] Train_loss = 0.8821, acc = 55.571
+Epoch [66/200] Test_loss = 0.8867, recall = 0.5948, precision = 0.5429, f1 = 0.5674, accuracy = 0.5466, auc = 0.5466
+
+Epoch [67/200] Train_loss = 0.8831, acc = 56.0989
+Epoch [67/200] Test_loss = 0.9789, recall = 0.5803, precision = 0.5075, f1 = 0.5409, accuracy = 0.5308, auc = 0.5334
+
+Epoch [68/200] Train_loss = 0.8841, acc = 56.5157
+Epoch [68/200] Test_loss = 0.8958, recall = 0.5502, precision = 0.5185, f1 = 0.5337, accuracy = 0.5205, auc = 0.5206
+
+Epoch [69/200] Train_loss = 0.8789, acc = 56.8213
+Epoch [69/200] Test_loss = 0.907, recall = 0.5432, precision = 0.4904, f1 = 0.5152, accuracy = 0.5154, auc = 0.5162
+
+Epoch [70/200] Train_loss = 0.8832, acc = 56.2378
+Epoch [70/200] Test_loss = 0.8691, recall = 0.5662, precision = 0.5527, f1 = 0.5594, accuracy = 0.5334, auc = 0.5316
+
+Epoch [71/200] Train_loss = 0.8802, acc = 56.6824
+Epoch [71/200] Test_loss = 0.9605, recall = 0.5825, precision = 0.5349, f1 = 0.5572, accuracy = 0.5361, auc = 0.5364
+
+Epoch [72/200] Train_loss = 0.8769, acc = 57.2659
+Epoch [72/200] Test_loss = 0.9018, recall = 0.5653, precision = 0.5579, f1 = 0.5615, accuracy = 0.547, auc = 0.5465
+
+Epoch [73/200] Train_loss = 0.8703, acc = 57.0714
+Epoch [73/200] Test_loss = 0.9215, recall = 0.5494, precision = 0.5424, f1 = 0.5458, accuracy = 0.5309, auc = 0.5304
+
+Epoch [74/200] Train_loss = 0.8769, acc = 57.2659
+Epoch [74/200] Test_loss = 0.9095, recall = 0.5844, precision = 0.5704, f1 = 0.577, accuracy = 0.5512, auc = 0.5496
+
+Epoch [75/200] Train_loss = 0.8741, acc = 56.4046
+Epoch [75/200] Test_loss = 0.9665, recall = 0.5547, precision = 0.5555, f1 = 0.5549, accuracy = 0.5466, auc = 0.5465
+
+Epoch [76/200] Train_loss = 0.8751, acc = 56.9603
+Epoch [76/200] Test_loss = 0.8637, recall = 0.5606, precision = 0.5437, f1 = 0.552, accuracy = 0.5393, auc = 0.539
+
+Epoch [77/200] Train_loss = 0.877, acc = 56.8769
+Epoch [77/200] Test_loss = 0.9215, recall = 0.609, precision = 0.5652, f1 = 0.5862, accuracy = 0.5674, auc = 0.5666
+
+Epoch [78/200] Train_loss = 0.8686, acc = 56.9603
+Epoch [78/200] Test_loss = 0.9212, recall = 0.5765, precision = 0.571, f1 = 0.5735, accuracy = 0.5511, auc = 0.5498
+
+Epoch [79/200] Train_loss = 0.8643, acc = 57.7105
+Epoch [79/200] Test_loss = 0.9073, recall = 0.5753, precision = 0.5467, f1 = 0.5606, accuracy = 0.5528, auc = 0.5528
+
+Epoch [80/200] Train_loss = 0.8674, acc = 57.2937
+Epoch [80/200] Test_loss = 0.8582, recall = 0.571, precision = 0.5938, f1 = 0.5817, accuracy = 0.5604, auc = 0.5597
+
+Epoch [81/200] Train_loss = 0.87, acc = 56.7936
+Epoch [81/200] Test_loss = 0.9159, recall = 0.5539, precision = 0.5262, f1 = 0.5396, accuracy = 0.5323, auc = 0.5325
+
+Epoch [82/200] Train_loss = 0.8674, acc = 57.5993
+Epoch [82/200] Test_loss = 0.858, recall = 0.5278, precision = 0.5456, f1 = 0.5364, accuracy = 0.5437, auc = 0.5433
+
+Epoch [83/200] Train_loss = 0.8685, acc = 56.8769
+Epoch [83/200] Test_loss = 0.9247, recall = 0.5462, precision = 0.5557, f1 = 0.5507, accuracy = 0.5481, auc = 0.5482
+
+Epoch [84/200] Train_loss = 0.8623, acc = 57.8494
+Epoch [84/200] Test_loss = 0.9195, recall = 0.5766, precision = 0.5587, f1 = 0.5675, accuracy = 0.5496, auc = 0.548
+
+Epoch [85/200] Train_loss = 0.8709, acc = 57.2937
+Epoch [85/200] Test_loss = 0.9095, recall = 0.5322, precision = 0.5386, f1 = 0.5351, accuracy = 0.536, auc = 0.5359
+
+Epoch [86/200] Train_loss = 0.8569, acc = 58.5718
+Epoch [86/200] Test_loss = 0.9471, recall = 0.5329, precision = 0.558, f1 = 0.5448, accuracy = 0.5469, auc = 0.5473
+
+Epoch [87/200] Train_loss = 0.863, acc = 57.516
+Epoch [87/200] Test_loss = 0.8876, recall = 0.5121, precision = 0.5322, f1 = 0.5217, accuracy = 0.5226, auc = 0.523
+
+Epoch [88/200] Train_loss = 0.866, acc = 57.4882
+Epoch [88/200] Test_loss = 0.8738, recall = 0.5657, precision = 0.5598, f1 = 0.5627, accuracy = 0.5602, auc = 0.5602
+
+Epoch [89/200] Train_loss = 0.8659, acc = 58.0439
+Epoch [89/200] Test_loss = 0.9345, recall = 0.5231, precision = 0.5366, f1 = 0.5297, accuracy = 0.5312, auc = 0.5313
+
+Epoch [90/200] Train_loss = 0.8646, acc = 57.1826
+Epoch [90/200] Test_loss = 0.948, recall = 0.5295, precision = 0.5638, f1 = 0.5456, accuracy = 0.5452, auc = 0.5461
+
+Epoch [91/200] Train_loss = 0.8593, acc = 58.4885
+Epoch [91/200] Test_loss = 0.8873, recall = 0.5633, precision = 0.5434, f1 = 0.5526, accuracy = 0.5423, auc = 0.5426
+
+Epoch [92/200] Train_loss = 0.8641, acc = 57.0714
+Epoch [92/200] Test_loss = 0.8836, recall = 0.5544, precision = 0.5776, f1 = 0.5656, accuracy = 0.5552, auc = 0.5551
+
+Epoch [93/200] Train_loss = 0.8627, acc = 56.7658
+Epoch [93/200] Test_loss = 0.9081, recall = 0.5141, precision = 0.5371, f1 = 0.5248, accuracy = 0.5222, auc = 0.5229
+
+Epoch [94/200] Train_loss = 0.8614, acc = 58.4051
+Epoch [94/200] Test_loss = 0.9255, recall = 0.562, precision = 0.5423, f1 = 0.5514, accuracy = 0.5532, auc = 0.5539
+
+Epoch [95/200] Train_loss = 0.8536, acc = 58.8775
+Epoch [95/200] Test_loss = 0.8851, recall = 0.5449, precision = 0.5812, f1 = 0.5624, accuracy = 0.5569, auc = 0.5575
+
+Epoch [96/200] Train_loss = 0.8524, acc = 59.1275
+Epoch [96/200] Test_loss = 0.9024, recall = 0.5586, precision = 0.5701, f1 = 0.564, accuracy = 0.5611, auc = 0.5614
+
+Epoch [97/200] Train_loss = 0.8524, acc = 59.4332
+Epoch [97/200] Test_loss = 0.8992, recall = 0.5411, precision = 0.5626, f1 = 0.5514, accuracy = 0.5464, auc = 0.5468
+
+Epoch [98/200] Train_loss = 0.8582, acc = 57.9883
+Epoch [98/200] Test_loss = 0.9368, recall = 0.5124, precision = 0.5519, f1 = 0.5313, accuracy = 0.5365, auc = 0.5372
+
+Epoch [99/200] Train_loss = 0.8505, acc = 58.0717
+Epoch [99/200] Test_loss = 0.8796, recall = 0.5385, precision = 0.5543, f1 = 0.5461, accuracy = 0.5592, auc = 0.5587
+
+Epoch [100/200] Train_loss = 0.8486, acc = 58.683
+Epoch [100/200] Test_loss = 0.9241, recall = 0.5379, precision = 0.5467, f1 = 0.5421, accuracy = 0.542, auc = 0.542
+
+Epoch [101/200] Train_loss = 0.8592, acc = 58.0995
+Epoch [101/200] Test_loss = 0.8775, recall = 0.5264, precision = 0.5509, f1 = 0.5383, accuracy = 0.5462, auc = 0.5461
+
+Epoch [102/200] Train_loss = 0.8552, acc = 58.4051
+Epoch [102/200] Test_loss = 0.9035, recall = 0.5179, precision = 0.5592, f1 = 0.5377, accuracy = 0.5564, auc = 0.5558
+
+Epoch [103/200] Train_loss = 0.8508, acc = 58.7108
+Epoch [103/200] Test_loss = 0.9267, recall = 0.5247, precision = 0.5427, f1 = 0.5334, accuracy = 0.5356, auc = 0.5357
+
+Epoch [104/200] Train_loss = 0.8542, acc = 57.6827
+Epoch [104/200] Test_loss = 0.8998, recall = 0.5141, precision = 0.55, f1 = 0.5314, accuracy = 0.5422, auc = 0.5424
+
+Epoch [105/200] Train_loss = 0.8467, acc = 58.8775
+Epoch [105/200] Test_loss = 0.8748, recall = 0.502, precision = 0.5184, f1 = 0.5098, accuracy = 0.531, auc = 0.5298
+
+Epoch [106/200] Train_loss = 0.8533, acc = 58.933
+Epoch [106/200] Test_loss = 0.8935, recall = 0.5062, precision = 0.5414, f1 = 0.5231, accuracy = 0.5458, auc = 0.5451
+
+Epoch [107/200] Train_loss = 0.8511, acc = 59.2387
+Epoch [107/200] Test_loss = 0.9119, recall = 0.5048, precision = 0.5351, f1 = 0.5194, accuracy = 0.5431, auc = 0.5421
+
+[BEST] recall = 0.609, precision = 0.5652, f1 = 0.5862, accuracy =0.5674, auc = 0.5666
