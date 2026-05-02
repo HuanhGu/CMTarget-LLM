@@ -24,6 +24,8 @@ CMTargetModel(
     (W_K): Linear(in_features=512, out_features=512, bias=True)
     (W_V): Linear(in_features=512, out_features=512, bias=True)
   )
+
+
   (basic_pro_moe): Qwen2MoeSparseMoeBlock(
     (gate): Sequential(
       (0): Linear(in_features=512, out_features=6, bias=False)
@@ -66,6 +68,9 @@ CMTargetModel(
     (shared_expert_gate): Linear(in_features=512, out_features=1, bias=False)
     (dropout): Dropout(p=0.3, inplace=False)
   )
+
+
+  
   (scorer): Scorer(
     (attention): mutil_head_attention(
       (relu): ReLU()
@@ -84,3 +89,21 @@ CMTargetModel(
     (score): Cosine()
   )
 )
+
+
+必须加 LoRA：MoE、SelfAttention。
+可选加 LoRA：scorer 的 attention 和 pooling 层（有助于微调评分）。
+不加 LoRA：embedding 层、输出线性层 linear2、Cosine。
+
+
+# 重点：target_modules 需要包含模型中所有的线性层关键字
+target_modules_gemini=[
+    # 1. 蛋白质与药物的 Attention 部分
+    "W_Q", "W_K", "W_V", 
+    # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
+    "gate_proj", "up_proj", "down_proj",
+    # 3. MoE 的门控机制
+    "gate", "shared_expert_gate",
+    # 4. Scorer 评分层中的线性层
+    "d_a", "p_a", "tune_linear1"
+]

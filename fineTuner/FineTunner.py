@@ -62,6 +62,7 @@ class FineTunner():
             else:
                 weight_p += [p]
         balancer_params = list(self.loss_balancer.parameters())
+
         self.optimizer = optim.AdamW([
             {'params': weight_p, 'weight_decay': 1e-4}, 
             {'params': bias_p, 'weight_decay': 0},
@@ -101,25 +102,17 @@ class FineTunner():
         model = CMTargetModel(self.configs)
         if model_path != '':
             model.load_model(model_path)
-       
+
         target_modules = [
-            "sequence_attention_pro.W_Q",
-            "sequence_attention_pro.W_K",
-            "sequence_attention_pro.W_V",
-            "sequence_attention_drug.W_Q",
-            "sequence_attention_drug.W_K",
-            "sequence_attention_drug.W_V",
-            "basic_pro_moe.experts.*.up_proj",
-            "basic_pro_moe.experts.*.down_proj",
-            "basic_pro_moe.experts.*.gate_proj",
-            "basic_drug_moe.experts.*.up_proj",
-            "basic_drug_moe.experts.*.down_proj",
-            "basic_drug_moe.experts.*.gate_proj"
+            # "W_Q", "W_K", "W_V",
+            "gate_proj",'shared_expert_gate','gate.0',
+            'd_a','p_a', "tune_linear1"
         ]
+        
         # 2. 定义 LoRA 配置
         lora_config = LoraConfig(
-            r=8,                # 秩大小，可根据显存调整 (8, 16, 32)
-            lora_alpha=16,       # 缩放系数，通常为 r 的 2 倍
+            r=16,                # 秩大小，可根据显存调整 (8, 16, 32)
+            lora_alpha=32,       # 缩放系数，通常为 r 的 2 倍
             target_modules=target_modules,
             lora_dropout=0.1,
             bias="none",
@@ -127,15 +120,17 @@ class FineTunner():
         )
 
         # 3. 包装模型
-        # get_peft_model 会自动冻结所有非 LoRA 参数
         model = get_peft_model(model, lora_config)
-        model.print_trainable_parameters()  #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
+        model.print_trainable_parameters()  
+        #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
 
         return model
+
 
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
         loss_list = torch.stack([load_balancing_loss*0.05, pred_loss])
+        # print(f"load_balancing_loss:{load_balancing_loss}, pred_loss:{pred_loss}")
         loss = self.loss_balancer(loss_list)
         return loss
 
@@ -147,7 +142,7 @@ class FineTunner():
         correct = 0
         total = 0
 
-        print(f"****** Epoch [{epoch_id+1}/{self.epochs} *****")
+        print(f"****** Epoch [{epoch_id+1}/{self.epochs}] *****")
         pbar = tqdm(self.train_loader, desc=f"Train Epoch", position=0, leave=True, ncols=100)
         for compound_batch, protein_batch, label_batch in pbar:
             self.optimizer.zero_grad()
@@ -163,7 +158,9 @@ class FineTunner():
             self.optimizer.step()
             self.scheduler.step()
 
-            pbar.set_postfix(loss= f"{loss.item():.4f}")
+            pbar.set_postfix(loss= f"{loss.item():.4f}", 
+                             mloss=f"{load_balancing_loss.item():.4f}",
+                             ploss= f"{pred_loss.item():.4f}")
             running_loss.append(loss.item())
 
             # 计算准确率
@@ -188,11 +185,10 @@ class FineTunner():
         metrics = {name: [] for name in ["recall", "precision", "f1", "accuracy", "auc"]}
 
         with torch.no_grad():
-
             i = 1
             total = len(self.test_loader)
             loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0,
-                        position=0, leave=True,ncols=100,ascii=False)
+                        position=0, leave=True,dynamic_ncols=True,ascii=False)
 
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
@@ -221,7 +217,7 @@ class FineTunner():
                     metrics[name].append(val)
                 # 当前值
                 current_metrics = dict(zip(metric_names, results)) 
-                loop.set_description(f'Evaluate Batch [{i-1}/{total}]')
+                loop.set_description(f'Evaluate metrics:')
                 loop.set_postfix(
                     loss=f"{loss.item():.4f}", 
                     f1=round(current_metrics['f1'], 4),
@@ -230,6 +226,8 @@ class FineTunner():
                     acc=round(current_metrics['accuracy'], 4), 
                     auc=round(current_metrics['auc'], 4)
                 )
+                # bls=f"{load_balancing_loss.item():.4f}",
+                # pls= f"{pred_loss.item():.4f}"
 
                 i += 1
                 y_true += label_batch.tolist()

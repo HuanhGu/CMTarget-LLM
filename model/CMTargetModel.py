@@ -104,14 +104,10 @@ class CMTargetModel(nn.Module):
         self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.drug_hid_dim, max_position_embeddings=222, padding_idx=1)
 
         # === 创建 fusion 模型 =====
-        # self.sequence_attention_pro = EnhancedAttentionBlock(self.pro_hid_dim, dropout_rate=0.1)
-        # self.sequence_attention_drug = EnhancedAttentionBlock(self.drug_hid_dim, dropout_rate=0.1)
         self.sequence_attention_pro = SelfAttention(self.pro_hid_dim, self.pro_hid_dim, self.pro_hid_dim)
         self.sequence_attention_drug = SelfAttention(self.drug_hid_dim, self.drug_hid_dim, self.drug_hid_dim)
 
         # === 创建 基础专家 模型 ===
-        # self.basic_pro_moe = BasicMOE(self.pro_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[100,256]
-        # self.basic_drug_moe = BasicMOE(self.drug_token_dim, self.moe_emb_dim, 3)   # (feature_in, feature_out, expert_num)[768,256]
         self.basic_pro_moe = Qwen2MoeSparseMoeBlock(self.pro_hid_dim, self.moe_emb_dim, 6)
         self.basic_drug_moe = Qwen2MoeSparseMoeBlock(self.drug_hid_dim, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
 

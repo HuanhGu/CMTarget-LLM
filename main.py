@@ -49,7 +49,7 @@ def prepare():
     parser.add_argument('--task', type=str, default = "finetune", 
                         help="choose the stage : train, finetune, predict")
 
-    parser.add_argument('-m', '--remark', type=str, default = "fintune_lr2e-6")
+    parser.add_argument('-m', '--remark', type=str, default = "gate, score_pool")
  
     args = parser.parse_args()
 
@@ -101,6 +101,8 @@ if __name__ == '__main__':
     pretrain_output_path = model_output_dir / "pretrain.pt"
     fintune_output_path = model_output_dir / "fineTune.pt"
     
+    start = datetime.now()
+
     if configs['task'] == 'train':
         print(
         f"⚡[train model {configs['model']}]\n"
@@ -109,19 +111,10 @@ if __name__ == '__main__':
         f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
         )
         # 源域训练
-        start = datetime.now()
         trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
         trainer.train(pretrain_output_path)
-        end = datetime.now()
-
-        print("-" * 30)
-        print(f"Pre-Train Start Time: {start.strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"Pre-Train End Time:   {end.strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"Total Duration:       {end-start}")
-        print("-" * 30)
     
     elif configs['task'] == 'finetune':
-        
         # 目标域微调
         fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
         fineTunner.fineTune(fintune_output_path)    # 加载pre_train完毕后的model_path, 作为初始值
@@ -136,18 +129,20 @@ if __name__ == '__main__':
         predictor = CMTargetPredictor(configs, configs['model_path'])#model
         predictor.predict()
 
+    end = datetime.now()
+    print("-" * 30)
+    print(f"Pre-Train Start Time: {start.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Pre-Train End Time:   {end.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Total Duration:       {end-start}")
+    print("-" * 30)
+
 
 
 """
-nohup /opt/conda/envs/cmtarget1/bin/python feature_save_hf.py /root/gpufree-data/workplace/CMTarget-LLM/ > feature_df_03170915.log 2>&1 &
-tail -f feature_df_03170915.log
-ps -ef | grep feature_save_hf.py
-nvidia-smi
-kill -9 <PID>
-
-nohup python -u main.py > main_0430_1859.log 2>&1 &
-tail -f main_0430_1859.log
+nohup python -u main.py > main_0501_1155.log 2>&1 &
+tail -f main_0501_1155.log
 ps -ef | grep main.py
+kill -9 <PID>
 
 为什么train cli中断的时候，会直接画图，tune不会。
 """
