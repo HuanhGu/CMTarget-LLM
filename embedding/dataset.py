@@ -6,11 +6,9 @@ from embedding.FeatureExtract import FeatureExtractor
 class DTIDataset(Dataset):
     '''
     输入[df] : 包含 (compound, protein, label) 的 pandas DataFrame
-    输出     : dataloader形式 
     '''
     def __init__(self, d_df):
         self.fe = FeatureExtractor()
-
         # 获取所有化合物序列的最大token数量
         self.d_max_tokenLen = self.fe.get_chemberta_max_length(d_df['compound'].tolist()) #222
         self.p_max_tokenLen = self.fe.get_probert_max_length(d_df['protein'].tolist()) #506
@@ -40,7 +38,7 @@ class DTIDataset(Dataset):
 
 
 
-
+'''
 
 CHARISOSMISET = {"#": 29, "%": 30, ")": 31, "(": 1, "+": 32, "-": 33, "/": 34, ".": 2,
                  "1": 35, "0": 3, "3": 36, "2": 4, "5": 37, "4": 5, "7": 38, "6": 6,
@@ -99,3 +97,5 @@ def collate_fn2(batch_data,max_d=100,max_p=1200):
         protein_new[i] = proteinint
         labels_new[i] = np.float64(label)
     return (compound_new, protein_new, labels_new)
+
+'''

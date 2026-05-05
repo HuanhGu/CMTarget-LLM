@@ -35,6 +35,7 @@ class Qwen2MoeSparseMoeBlock(nn.Module):
         self.experts = nn.ModuleList([Qwen2MoeMLP(dim, expert_dim) for _ in range(expert_number)])
         
         # 与Mixtral相比，Qwen2-MoE多了 shared_expert 和 shared_expert_gate
+        #使用一个 gate（sigmoid 门）为每个 token 分配权重，控制共享专家的贡献
         self.shared_expert = Qwen2MoeMLP(dim, intermediate_size=expert_dim)
         self.shared_expert_gate = torch.nn.Linear(dim, 1, bias=False)
 

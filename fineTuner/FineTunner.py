@@ -103,11 +103,23 @@ class FineTunner():
         if model_path != '':
             model.load_model(model_path)
 
-        target_modules = [
-            # "W_Q", "W_K", "W_V",
-            "gate_proj",'shared_expert_gate','gate.0',
-            'd_a','p_a', "tune_linear1"
+        # target_modules = [
+        #     # "W_Q", "W_K", "W_V",
+        #     "gate_proj",'shared_expert_gate','gate.0',
+        #     'd_a','p_a', "tune_linear1"
+        # ]
+        
+        target_modules=[
+            # 1. 蛋白质与药物的 Attention 部分
+            "W_Q", "W_K", "W_V", 
+            # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
+            "gate_proj", "up_proj", "down_proj",
+            # 3. MoE 的门控机制
+            "gate", "shared_expert_gate",
+            # 4. Scorer 评分层中的线性层
+            "d_a", "p_a", "tune_linear1", "linear2"
         ]
+
         
         # 2. 定义 LoRA 配置
         lora_config = LoraConfig(

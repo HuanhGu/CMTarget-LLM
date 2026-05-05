@@ -105,5 +105,5 @@ target_modules_gemini=[
     # 3. MoE 的门控机制
     "gate", "shared_expert_gate",
     # 4. Scorer 评分层中的线性层
-    "d_a", "p_a", "tune_linear1"
+    "d_a", "p_a", "tune_linear1", "linear2"
 ]
