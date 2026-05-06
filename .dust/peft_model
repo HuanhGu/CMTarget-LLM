@@ -1,4 +1,5 @@
-PeftModelForSequenceClassification(
+trainable params: 7,241,730 || all params: 35,983,876 || trainable%: 20.1249
+fine-tune modelPeftModel(
   (base_model): LoraModel(
     (model): CMTargetModel(
       (protein_embed): BertEmbeddings(
@@ -16,139 +17,237 @@ PeftModelForSequenceClassification(
         (dropout): Dropout(p=0.1, inplace=False)
       )
       (sequence_attention_pro): SelfAttention(
-        (W_Q): lora.Linear(
-          (base_layer): Linear(in_features=512, out_features=512, bias=True)
-          (lora_dropout): ModuleDict(
-            (default): Dropout(p=0.1, inplace=False)
+        (W_Q): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=512, bias=True)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=512, bias=True)
           )
-          (lora_A): ModuleDict(
-            (default): Linear(in_features=512, out_features=8, bias=False)
-          )
-          (lora_B): ModuleDict(
-            (default): Linear(in_features=8, out_features=512, bias=False)
-          )
-          (lora_embedding_A): ParameterDict()
-          (lora_embedding_B): ParameterDict()
-          (lora_magnitude_vector): ModuleDict()
         )
-        (W_K): lora.Linear(
-          (base_layer): Linear(in_features=512, out_features=512, bias=True)
-          (lora_dropout): ModuleDict(
-            (default): Dropout(p=0.1, inplace=False)
+        (W_K): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=512, bias=True)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=512, bias=True)
           )
-          (lora_A): ModuleDict(
-            (default): Linear(in_features=512, out_features=8, bias=False)
-          )
-          (lora_B): ModuleDict(
-            (default): Linear(in_features=8, out_features=512, bias=False)
-          )
-          (lora_embedding_A): ParameterDict()
-          (lora_embedding_B): ParameterDict()
-          (lora_magnitude_vector): ModuleDict()
         )
-        (W_V): lora.Linear(
-          (base_layer): Linear(in_features=512, out_features=512, bias=True)
-          (lora_dropout): ModuleDict(
-            (default): Dropout(p=0.1, inplace=False)
+        (W_V): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=512, bias=True)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=512, bias=True)
           )
-          (lora_A): ModuleDict(
-            (default): Linear(in_features=512, out_features=8, bias=False)
-          )
-          (lora_B): ModuleDict(
-            (default): Linear(in_features=8, out_features=512, bias=False)
-          )
-          (lora_embedding_A): ParameterDict()
-          (lora_embedding_B): ParameterDict()
-          (lora_magnitude_vector): ModuleDict()
         )
       )
       (sequence_attention_drug): SelfAttention(
-        (W_Q): lora.Linear(
-          (base_layer): Linear(in_features=512, out_features=512, bias=True)
-          (lora_dropout): ModuleDict(
-            (default): Dropout(p=0.1, inplace=False)
+        (W_Q): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=512, bias=True)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=512, bias=True)
           )
-          (lora_A): ModuleDict(
-            (default): Linear(in_features=512, out_features=8, bias=False)
-          )
-          (lora_B): ModuleDict(
-            (default): Linear(in_features=8, out_features=512, bias=False)
-          )
-          (lora_embedding_A): ParameterDict()
-          (lora_embedding_B): ParameterDict()
-          (lora_magnitude_vector): ModuleDict()
         )
-        (W_K): lora.Linear(
-          (base_layer): Linear(in_features=512, out_features=512, bias=True)
-          (lora_dropout): ModuleDict(
-            (default): Dropout(p=0.1, inplace=False)
+        (W_K): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=512, bias=True)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=512, bias=True)
           )
-          (lora_A): ModuleDict(
-            (default): Linear(in_features=512, out_features=8, bias=False)
-          )
-          (lora_B): ModuleDict(
-            (default): Linear(in_features=8, out_features=512, bias=False)
-          )
-          (lora_embedding_A): ParameterDict()
-          (lora_embedding_B): ParameterDict()
-          (lora_magnitude_vector): ModuleDict()
         )
-        (W_V): lora.Linear(
-          (base_layer): Linear(in_features=512, out_features=512, bias=True)
-          (lora_dropout): ModuleDict(
-            (default): Dropout(p=0.1, inplace=False)
+        (W_V): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=512, bias=True)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=512, bias=True)
           )
-          (lora_A): ModuleDict(
-            (default): Linear(in_features=512, out_features=8, bias=False)
-          )
-          (lora_B): ModuleDict(
-            (default): Linear(in_features=8, out_features=512, bias=False)
-          )
-          (lora_embedding_A): ParameterDict()
-          (lora_embedding_B): ParameterDict()
-          (lora_magnitude_vector): ModuleDict()
         )
       )
       (basic_pro_moe): Qwen2MoeSparseMoeBlock(
         (gate): Sequential(
-          (0): Linear(in_features=512, out_features=6, bias=False)
+          (0): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=6, bias=False)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=6, bias=False)
+            )
+          )
         )
         (experts): ModuleList(
           (0-5): 6 x Qwen2MoeMLP(
-            (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
-            (up_proj): Linear(in_features=512, out_features=1024, bias=False)
-            (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+            (gate_proj): lora.Linear(
+              (base_layer): Linear(in_features=512, out_features=1024, bias=False)
+              (lora_dropout): ModuleDict(
+                (default): Dropout(p=0.1, inplace=False)
+              )
+              (lora_A): ModuleDict(
+                (default): Linear(in_features=512, out_features=16, bias=False)
+              )
+              (lora_B): ModuleDict(
+                (default): Linear(in_features=16, out_features=1024, bias=False)
+              )
+              (lora_embedding_A): ParameterDict()
+              (lora_embedding_B): ParameterDict()
+              (lora_magnitude_vector): ModuleDict()
+            )
+            (up_proj): lora.Linear(
+              (base_layer): Linear(in_features=512, out_features=1024, bias=False)
+              (lora_dropout): ModuleDict(
+                (default): Dropout(p=0.1, inplace=False)
+              )
+              (lora_A): ModuleDict(
+                (default): Linear(in_features=512, out_features=16, bias=False)
+              )
+              (lora_B): ModuleDict(
+                (default): Linear(in_features=16, out_features=1024, bias=False)
+              )
+              (lora_embedding_A): ParameterDict()
+              (lora_embedding_B): ParameterDict()
+              (lora_magnitude_vector): ModuleDict()
+            )
+            (down_proj): lora.Linear(
+              (base_layer): Linear(in_features=1024, out_features=512, bias=False)
+              (lora_dropout): ModuleDict(
+                (default): Dropout(p=0.1, inplace=False)
+              )
+              (lora_A): ModuleDict(
+                (default): Linear(in_features=1024, out_features=16, bias=False)
+              )
+              (lora_B): ModuleDict(
+                (default): Linear(in_features=16, out_features=512, bias=False)
+              )
+              (lora_embedding_A): ParameterDict()
+              (lora_embedding_B): ParameterDict()
+              (lora_magnitude_vector): ModuleDict()
+            )
             (act_fn): SiLU()
           )
         )
         (shared_expert): Qwen2MoeMLP(
-          (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
-          (up_proj): Linear(in_features=512, out_features=1024, bias=False)
-          (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+          (gate_proj): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=1024, bias=False)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=1024, bias=False)
+            )
+          )
+          (up_proj): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=1024, bias=False)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=1024, bias=False)
+            )
+          )
+          (down_proj): lora.Linear(
+            (base_layer): Linear(in_features=1024, out_features=512, bias=False)
+            (lora_dropout): ModuleDict(
+              (default): Dropout(p=0.1, inplace=False)
+            )
+            (lora_A): ModuleDict(
+              (default): Linear(in_features=1024, out_features=16, bias=False)
+            )
+            (lora_B): ModuleDict(
+              (default): Linear(in_features=16, out_features=512, bias=False)
+            )
+            (lora_embedding_A): ParameterDict()
+            (lora_embedding_B): ParameterDict()
+            (lora_magnitude_vector): ModuleDict()
+          )
           (act_fn): SiLU()
         )
-        (shared_expert_gate): Linear(in_features=512, out_features=1, bias=False)
+        (shared_expert_gate): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=1, bias=False)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=1, bias=False)
+          )
+        )
         (dropout): Dropout(p=0.3, inplace=False)
       )
       (basic_drug_moe): Qwen2MoeSparseMoeBlock(
         (gate): Sequential(
-          (0): Linear(in_features=512, out_features=6, bias=False)
+          (0): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=6, bias=False)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=6, bias=False)
+            )
+          )
         )
         (experts): ModuleList(
           (0-5): 6 x Qwen2MoeMLP(
-            (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
-            (up_proj): Linear(in_features=512, out_features=1024, bias=False)
-            (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+            (gate_proj): lora.Linear(
+              (base_layer): Linear(in_features=512, out_features=1024, bias=False)
+              (lora_dropout): ModuleDict(
+                (default): Dropout(p=0.1, inplace=False)
+              )
+              (lora_A): ModuleDict(
+                (default): Linear(in_features=512, out_features=16, bias=False)
+              )
+              (lora_B): ModuleDict(
+                (default): Linear(in_features=16, out_features=1024, bias=False)
+              )
+              (lora_embedding_A): ParameterDict()
+              (lora_embedding_B): ParameterDict()
+              (lora_magnitude_vector): ModuleDict()
+            )
+            (up_proj): lora.Linear(
+              (base_layer): Linear(in_features=512, out_features=1024, bias=False)
+              (lora_dropout): ModuleDict(
+                (default): Dropout(p=0.1, inplace=False)
+              )
+              (lora_A): ModuleDict(
+                (default): Linear(in_features=512, out_features=16, bias=False)
+              )
+              (lora_B): ModuleDict(
+                (default): Linear(in_features=16, out_features=1024, bias=False)
+              )
+              (lora_embedding_A): ParameterDict()
+              (lora_embedding_B): ParameterDict()
+              (lora_magnitude_vector): ModuleDict()
+            )
+            (down_proj): lora.Linear(
+              (base_layer): Linear(in_features=1024, out_features=512, bias=False)
+              (lora_dropout): ModuleDict(
+                (default): Dropout(p=0.1, inplace=False)
+              )
+              (lora_A): ModuleDict(
+                (default): Linear(in_features=1024, out_features=16, bias=False)
+              )
+              (lora_B): ModuleDict(
+                (default): Linear(in_features=16, out_features=512, bias=False)
+              )
+              (lora_embedding_A): ParameterDict()
+              (lora_embedding_B): ParameterDict()
+              (lora_magnitude_vector): ModuleDict()
+            )
             (act_fn): SiLU()
           )
         )
         (shared_expert): Qwen2MoeMLP(
-          (gate_proj): Linear(in_features=512, out_features=1024, bias=False)
-          (up_proj): Linear(in_features=512, out_features=1024, bias=False)
-          (down_proj): Linear(in_features=1024, out_features=512, bias=False)
+          (gate_proj): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=1024, bias=False)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=1024, bias=False)
+            )
+          )
+          (up_proj): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=1024, bias=False)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=1024, bias=False)
+            )
+          )
+          (down_proj): lora.Linear(
+            (base_layer): Linear(in_features=1024, out_features=512, bias=False)
+            (lora_dropout): ModuleDict(
+              (default): Dropout(p=0.1, inplace=False)
+            )
+            (lora_A): ModuleDict(
+              (default): Linear(in_features=1024, out_features=16, bias=False)
+            )
+            (lora_B): ModuleDict(
+              (default): Linear(in_features=16, out_features=512, bias=False)
+            )
+            (lora_embedding_A): ParameterDict()
+            (lora_embedding_B): ParameterDict()
+            (lora_magnitude_vector): ModuleDict()
+          )
           (act_fn): SiLU()
         )
-        (shared_expert_gate): Linear(in_features=512, out_features=1, bias=False)
+        (shared_expert_gate): ModulesToSaveWrapper(
+          (original_module): Linear(in_features=512, out_features=1, bias=False)
+          (modules_to_save): ModuleDict(
+            (default): Linear(in_features=512, out_features=1, bias=False)
+          )
+        )
         (dropout): Dropout(p=0.3, inplace=False)
       )
       (scorer): Scorer(
@@ -156,22 +255,42 @@ PeftModelForSequenceClassification(
           (relu): ReLU()
           (tanh): Tanh()
           (d_a): Linear(in_features=512, out_features=4096, bias=True)
-          (p_a): Linear(in_features=512, out_features=4096, bias=True)
-        )
-        (user_pooling): SelfAttentionPooling(
-          (tune_linear1): Linear(in_features=512, out_features=512, bias=True)
-          (linear2): Linear(in_features=512, out_features=1, bias=True)
-        )
-        (item_pooling): SelfAttentionPooling(
-          (tune_linear1): Linear(in_features=512, out_features=512, bias=True)
-          (linear2): Linear(in_features=512, out_features=1, bias=True)
-        )
-        (score): ModulesToSaveWrapper(
-          (original_module): Cosine()
-          (modules_to_save): ModuleDict(
-            (default): Cosine()
+          (p_a): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=4096, bias=True)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=4096, bias=True)
+            )
           )
         )
+        (user_pooling): SelfAttentionPooling(
+          (tune_linear1): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=512, bias=True)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=512, bias=True)
+            )
+          )
+          (linear2): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=1, bias=True)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=1, bias=True)
+            )
+          )
+        )
+        (item_pooling): SelfAttentionPooling(
+          (tune_linear1): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=512, bias=True)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=512, bias=True)
+            )
+          )
+          (linear2): ModulesToSaveWrapper(
+            (original_module): Linear(in_features=512, out_features=1, bias=True)
+            (modules_to_save): ModuleDict(
+              (default): Linear(in_features=512, out_features=1, bias=True)
+            )
+          )
+        )
+        (score): Cosine()
       )
     )
   )

@@ -42,14 +42,14 @@ def prepare():
                         help="choose a scorer, MF,GMF,Cosine ")
     
     parser.add_argument('-s', '--source_name', type = str, default="drugbank")#drugbank
-    parser.add_argument('-t', '--target_name', default='hit')
+    parser.add_argument('-t', '--target_name', default='hit')#hit
     
     parser.add_argument('--token_dim_pro', type = int, default='512')#probert=1024, w2c=100
     parser.add_argument('--token_dim_drug', type = int, default='512')#chemberta=768
     parser.add_argument('--task', type=str, default = "finetune", 
                         help="choose the stage : train, finetune, predict")
 
-    parser.add_argument('-m', '--remark', type=str, default = "tune_all, save moe.gate, shared_expert & score.d_a, p_a, tune_linear1, linear2")
+    parser.add_argument('-m', '--remark', type=str, default = "hit")
  
     args = parser.parse_args()
 
@@ -139,8 +139,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0506_1348.log 2>&1 &
-tail -f main_0506_1348.log
+nohup python -u main.py > main_0506_1834.log 2>&1 &
+tail -f main_0506_1834.log
 ps -ef | grep main.py
 kill -9 <PID>
 

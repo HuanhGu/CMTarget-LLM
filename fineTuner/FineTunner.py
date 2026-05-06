@@ -49,7 +49,7 @@ class FineTunner():
         self.checkpoint_interval = configs['checkpoint_interval']
 
         self.model = self.get_model(model_path)
-        print(f"fine-tune model{self.model}")
+        # print(f"fine-tune model{self.model}")
         self.train_loader,self.test_loader = self.get_dataloader(target_name) #样本 3599, 29
 
         self.loss_balancer = MultiTaskLossWrapper(task_num=2).to(self.device) # loss均衡器
@@ -84,6 +84,7 @@ class FineTunner():
             " 1. 读取序列数据集 "
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
+            d_df = d_df[:4499] 
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 
@@ -107,25 +108,25 @@ class FineTunner():
         if model_path != '':
             model.load_model(model_path)
 
-        # target_modules = [
-        #     # "W_Q", "W_K", "W_V",
-        #     "gate_proj",'shared_expert_gate','gate.0',
-        #     'd_a','p_a', "tune_linear1"
-        # ]
-        
-        target_modules=[
+            # 微调层
+            target_modules=[
             # 1. 蛋白质与药物的 Attention 部分
             "W_Q", "W_K", "W_V", 
             # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
-            "gate_proj", "up_proj", "down_proj",
+            "gate_proj", 
+            # "up_proj", 
+            # "down_proj",
             # 3. MoE 的门控机制
             # "gate.0", "shared_expert_gate",
             # 4. Scorer 评分层中的线性层
             # "d_a", "p_a", "tune_linear1", "linear2"
         ]
 
+        # 全训练层
         modules_to_save=[
             # "gate_proj", "up_proj", "down_proj",
+            # "W_Q", "W_K", "W_V", 
+            "up_proj", "down_proj",
             "gate.0", "shared_expert_gate","shared_expert.gate_proj","shared_expert.up_proj","shared_expert.down_proj"
             "d_a", "p_a", "tune_linear1", "linear2"
             ]
@@ -133,8 +134,8 @@ class FineTunner():
         
         # 2. 定义 LoRA 配置
         lora_config = LoraConfig(
-            r=16,                # 秩大小，可根据显存调整 (8, 16, 32)
-            lora_alpha=32,       # 缩放系数，通常为 r 的 2 倍
+            r=32,                # 秩大小，可根据显存调整 (8, 16, 32)
+            lora_alpha=64,       # 缩放系数，通常为 r 的 2 倍
             target_modules=target_modules,
             modules_to_save = modules_to_save,
             lora_dropout=0.1,
@@ -146,12 +147,9 @@ class FineTunner():
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()  
         #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
-
-        # 打印一下确认状态
-        # for name, param in model.named_parameters():
-            # if param.requires_grad:
-                # print(f"Trainable: {name}")
-                
+        print(f"lora_config:{lora_config}")
+        print(f"target_modules:{target_modules}")
+        print(f"modules_to_save:{modules_to_save}")
 
         return model
 
