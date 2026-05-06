@@ -27,13 +27,13 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 128)
+    parser.add_argument('-bs', '--batch_size', type = int, default = 128)#128
 
     parser.add_argument('--checkpoint_interval', type=int, default=30)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
-    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 微调学习率应该更大还是更小？更小，约1/10 or 1/100
+    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-5 微调学习率应该更大还是更小？更小，约1/10 or 1/100
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
     parser.add_argument('--model_path', type = str, default="./data/models/pretrain.pt")
     
@@ -49,7 +49,7 @@ def prepare():
     parser.add_argument('--task', type=str, default = "finetune", 
                         help="choose the stage : train, finetune, predict")
 
-    parser.add_argument('-m', '--remark', type=str, default = "gate, score_pool")
+    parser.add_argument('-m', '--remark', type=str, default = "tune_all, save moe.gate, shared_expert & score.d_a, p_a, tune_linear1, linear2")
  
     args = parser.parse_args()
 
@@ -139,8 +139,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0501_1155.log 2>&1 &
-tail -f main_0501_1155.log
+nohup python -u main.py > main_0506_1348.log 2>&1 &
+tail -f main_0506_1348.log
 ps -ef | grep main.py
 kill -9 <PID>
 

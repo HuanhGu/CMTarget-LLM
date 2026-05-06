@@ -49,6 +49,7 @@ class FineTunner():
         self.checkpoint_interval = configs['checkpoint_interval']
 
         self.model = self.get_model(model_path)
+        print(f"fine-tune model{self.model}")
         self.train_loader,self.test_loader = self.get_dataloader(target_name) #样本 3599, 29
 
         self.loss_balancer = MultiTaskLossWrapper(task_num=2).to(self.device) # loss均衡器
@@ -66,11 +67,14 @@ class FineTunner():
         self.optimizer = optim.AdamW([
             {'params': weight_p, 'weight_decay': 1e-4}, 
             {'params': bias_p, 'weight_decay': 0},
-            {'params': balancer_params, 'lr': self.learning_rate} # 给 balancer 专门开一组
+            {'params': balancer_params, 'lr': self.learning_rate} # 给 balancer 专门开一组  #*1
         ], lr=self.learning_rate)
-        self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,
+        # 配合平滑的学习率策略
+        # self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.epochs)
+
+        self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, max_lr=self.learning_rate * 10,#1
                                                 cycle_momentum=False,
-                                                step_size_up=len(self.train_loader))
+                                                step_size_up=2 * len(self.train_loader))  # 通常与sgd配合使用*5
 
 
 
@@ -91,7 +95,7 @@ class FineTunner():
 
             "得到dataloader"
             train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
-            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
+            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size, num_workers=0)
             print(f"总数据数目:{total_size}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
 
             return train_load, test_load
@@ -115,10 +119,16 @@ class FineTunner():
             # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
             "gate_proj", "up_proj", "down_proj",
             # 3. MoE 的门控机制
-            "gate", "shared_expert_gate",
+            # "gate.0", "shared_expert_gate",
             # 4. Scorer 评分层中的线性层
-            "d_a", "p_a", "tune_linear1", "linear2"
+            # "d_a", "p_a", "tune_linear1", "linear2"
         ]
+
+        modules_to_save=[
+            # "gate_proj", "up_proj", "down_proj",
+            "gate.0", "shared_expert_gate","shared_expert.gate_proj","shared_expert.up_proj","shared_expert.down_proj"
+            "d_a", "p_a", "tune_linear1", "linear2"
+            ]
 
         
         # 2. 定义 LoRA 配置
@@ -126,6 +136,7 @@ class FineTunner():
             r=16,                # 秩大小，可根据显存调整 (8, 16, 32)
             lora_alpha=32,       # 缩放系数，通常为 r 的 2 倍
             target_modules=target_modules,
+            modules_to_save = modules_to_save,
             lora_dropout=0.1,
             bias="none",
             task_type=None  # 你在预测蛋白-药物评分
@@ -135,6 +146,12 @@ class FineTunner():
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()  
         #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
+
+        # 打印一下确认状态
+        # for name, param in model.named_parameters():
+            # if param.requires_grad:
+                # print(f"Trainable: {name}")
+                
 
         return model
 
