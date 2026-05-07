@@ -35,6 +35,8 @@ class CMTargetTrainer():
         self.batch_size = configs['batch_size']
         self.patience = configs['patience']
         self.checkpoint_interval = configs['checkpoint_interval']
+        self.use_selfatt = configs['use_selfatt']
+        self.use_moe = configs['use_moe']
 
         self.model = self.get_model(model_path)
         print(self.model)
@@ -77,7 +79,7 @@ class CMTargetTrainer():
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
             # d_df = d_df[:4499] 
-            d_df = d_df[:300] 
+            # d_df = d_df[:300] 
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 
@@ -104,9 +106,11 @@ class CMTargetTrainer():
     
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
         "计算损失:  # 总损失 = 对比损失 + 负载均衡损失 + 预测损失"
-
-        loss_list = torch.stack([load_balancing_loss*0.05, pred_loss])
-        loss = self.loss_balancer(loss_list)
+        if self.use_moe:
+            loss_list = torch.stack([load_balancing_loss*0.05, pred_loss])
+            loss = self.loss_balancer(loss_list)
+        else:
+            loss = pred_loss
         return loss
 
     def model_train_anepoch(self, model, epoch_id):

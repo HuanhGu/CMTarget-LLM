@@ -95,30 +95,24 @@ class CMTargetModel(nn.Module):
         self.stamp = configs['timestamp']
         self.device = configs['device']
 
-        # self.pro_hid_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
-        # self.drug_hid_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
-
-        self.hidden_dim = configs['token_dim_pro']
+        self.pro_hid_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
+        self.drug_hid_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
         self.moe_emb_dim = 1024      # 3 专家编码参数
-        self.use_selfatt = configs['use_selfatt']
-        self.use_moe = configs['use_moe']
 
         # 4. 模型可学习参数
-        self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.hidden_dim, max_position_embeddings=506, padding_idx=0)
-        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.hidden_dim, max_position_embeddings=222, padding_idx=1)
+        self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.pro_hid_dim, max_position_embeddings=506, padding_idx=0)
+        self.drug_embed = BertEmbeddings(vocab_size=767, hidden_size=self.drug_hid_dim, max_position_embeddings=222, padding_idx=1)
 
         # === 创建 fusion 模型 =====
-        if self.use_selfatt:
-            self.sequence_attention_pro = SelfAttention(self.hidden_dim, self.hidden_dim, self.hidden_dim)
-            self.sequence_attention_drug = SelfAttention(self.hidden_dim, self.hidden_dim, self.hidden_dim)
+        self.sequence_attention_pro = SelfAttention(self.pro_hid_dim, self.pro_hid_dim, self.pro_hid_dim)
+        self.sequence_attention_drug = SelfAttention(self.drug_hid_dim, self.drug_hid_dim, self.drug_hid_dim)
 
         # === 创建 基础专家 模型 ===
-        if self.use_moe:
-            self.basic_pro_moe = Qwen2MoeSparseMoeBlock(self.hidden_dim, self.moe_emb_dim, 6)
-            self.basic_drug_moe = Qwen2MoeSparseMoeBlock(self.hidden_dim, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
+        self.basic_pro_moe = Qwen2MoeSparseMoeBlock(self.pro_hid_dim, self.moe_emb_dim, 6)
+        self.basic_drug_moe = Qwen2MoeSparseMoeBlock(self.drug_hid_dim, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
 
         # === 创建 打分 模型 ===
-        self.scorer = Scorer(configs, self.hidden_dim)
+        self.scorer = Scorer(configs, self.pro_hid_dim)
 
 
     def forward(self, protein_features, drug_features):
@@ -131,28 +125,21 @@ class CMTargetModel(nn.Module):
         # 1. wordEmbedding + PosEmbedding
         proteinembed = self.protein_embed(proteins) #128,447,512
         drugembed = self.drug_embed(drugs) #128,512,768
-        pro_hidden = proteinembed
-        drug_hidden = drugembed
-        
+
         # 2. 自注意力
-        if self.use_selfatt:
-            pro_hidden = self.sequence_attention_pro(proteinembed, protein_mask) #128,447,512        
-            drug_hidden = self.sequence_attention_drug(drugembed, drug_mask) #128,512,512
-        
+        pro_fused_output = self.sequence_attention_pro(proteinembed, protein_mask) #128,447,512        
+        drug_fused_output = self.sequence_attention_drug(drugembed, drug_mask) #128,512,512
         contrastive_Loss = 0  # 不要三模态
 
 
         # 3. 专家编码器 : 不同蛋白和化合物的token用不同专家编码 
         # 专家编码输出, moe的负载均衡损失
-        if self.use_moe:
-            pro_hidden, pro_moe_loss = self.basic_pro_moe(pro_hidden, protein_mask) #in:[2,501,100] out:[2,501,256]
-            drug_hidden, drug_moe_loss = self.basic_drug_moe(drug_hidden, drug_mask) #in:[2,68,78] out:[2,68,256]
-            load_balancing_loss = pro_moe_loss + drug_moe_loss     # 3.9189+3.4380 
-        else:
-            load_balancing_loss=0
-
+        pro_moe_output, pro_moe_loss = self.basic_pro_moe(pro_fused_output, protein_mask) #in:[2,501,100] out:[2,501,256]
+        drug_moe_output, drug_moe_loss = self.basic_drug_moe(drug_fused_output, drug_mask) #in:[2,68,78] out:[2,68,256]
+        load_balancing_loss = pro_moe_loss + drug_moe_loss     # 3.9189+3.4380 
+        # load_balancing_loss=0
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
-        predicted_scores = self.scorer.forward(pro_hidden, drug_hidden)
+        predicted_scores = self.scorer.forward(pro_moe_output, drug_moe_output)
         
         return predicted_scores, contrastive_Loss, load_balancing_loss
     
