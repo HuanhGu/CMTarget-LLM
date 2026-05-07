@@ -139,8 +139,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0506_2121.log 2>&1 &
-tail -f main_0506_2121.log
+nohup python -u main.py > main_0507_1817.log 2>&1 &
+tail -f main_0507_1817.log
 ps -ef | grep main.py
 kill -9 <PID>
 """
