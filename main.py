@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 64)#128
+    parser.add_argument('-bs', '--batch_size', type = int, default = 128)#128
 
     parser.add_argument('--checkpoint_interval', type=int, default=30)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
@@ -35,7 +35,7 @@ def prepare():
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-5 微调学习率应该更大还是更小？更小，约1/10 or 1/100
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
-    parser.add_argument('--model_path', type = str, default="./data/models/pretrain.pt")
+    parser.add_argument('--model_path', type = str, default="")#./data/models/pretrain.pt
     
     parser.add_argument('--patience', type = int, default=30) 
     parser.add_argument('-score', '--score_way', type=str, default='Cosine', 
@@ -46,7 +46,7 @@ def prepare():
     
     parser.add_argument('--token_dim_pro', type = int, default='512')#probert=1024, w2c=100
     parser.add_argument('--token_dim_drug', type = int, default='512')#chemberta=768
-    parser.add_argument('--task', type=str, default = "finetune", 
+    parser.add_argument('--task', type=str, default = "train", 
                         help="choose the stage : train, finetune, predict")
 
     parser.add_argument('-m', '--remark', type=str, default = "lra_r = 16, bz=64. tune:from down_proj to end.")
@@ -111,13 +111,12 @@ if __name__ == '__main__':
         f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
         )
         # 源域训练
-        trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path'])
+        trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path']) # 预训练输入的模型路径
         trainer.train(pretrain_output_path)
-    
-    elif configs['task'] == 'finetune':
+        
         # 目标域微调
-        fineTunner = FineTunner(configs, configs['target_name'], configs['model_path'])#model
-        fineTunner.fineTune(fintune_output_path)    # 加载pre_train完毕后的model_path, 作为初始值
+        fineTunner = FineTunner(configs, configs['target_name'], pretrain_output_path) # 加载pre_train完毕后的model_path, 作为初始值
+        fineTunner.fineTune(fintune_output_path)    
         
 
     elif configs['task'] == 'predict':

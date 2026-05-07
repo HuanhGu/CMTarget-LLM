@@ -84,7 +84,8 @@ class FineTunner():
             " 1. 读取序列数据集 "
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
-            d_df = d_df[:4499] 
+            # d_df = d_df[:4499] 
+            d_df = d_df[:300] 
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 

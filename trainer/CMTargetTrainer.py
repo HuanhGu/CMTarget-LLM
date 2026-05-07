@@ -77,6 +77,7 @@ class CMTargetTrainer():
             csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
             d_df = pd.read_csv(csv_path) 
             # d_df = d_df[:4499] 
+            d_df = d_df[:300] 
             "特征提取"
             full_dataset = DTIDataset(d_df)       # drug,pro,label
 
@@ -89,7 +90,7 @@ class CMTargetTrainer():
             "得到dataloader"
             train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
             test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
-            print(f"总数据数目:{len(total_size)}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
+            print(f"总数据数目:{total_size}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
             
             return train_load, test_load
 
