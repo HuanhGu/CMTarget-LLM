@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 128)#128
+    parser.add_argument('-bs', '--batch_size', type = int, default = 64)#128
 
     parser.add_argument('--checkpoint_interval', type=int, default=30)
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#
@@ -49,7 +49,7 @@ def prepare():
     parser.add_argument('--task', type=str, default = "finetune", 
                         help="choose the stage : train, finetune, predict")
 
-    parser.add_argument('-m', '--remark', type=str, default = "hit")
+    parser.add_argument('-m', '--remark', type=str, default = "lra_r = 16, bz=64. tune:from down_proj to end.")
  
     args = parser.parse_args()
 
@@ -139,10 +139,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0506_1834.log 2>&1 &
-tail -f main_0506_1834.log
+nohup python -u main.py > main_0506_2121.log 2>&1 &
+tail -f main_0506_2121.log
 ps -ef | grep main.py
 kill -9 <PID>
-
-为什么train cli中断的时候，会直接画图，tune不会。
 """
