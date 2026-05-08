@@ -7,7 +7,6 @@ features/
 checkpoints/
 logs_dust_tune/
 logs/
-*.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

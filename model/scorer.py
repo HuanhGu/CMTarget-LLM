@@ -155,30 +155,3 @@ class Scorer(torch.nn.Module):
         # score = self.classifier(combined)
         
         return output
-
-
-
-
-
-# self.attention = cross_attention(head = 8, conv=self.fea_dim)
-# self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
-# self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
-# self.Drug_avg_pool = nn.AdaptiveAvgPool1d(1)
-# self.Protein_avg_pool = nn.AdaptiveAvgPool1d(1)
-
-
-"""
-# drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-# prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-
-# --- 药物特征池化 ---
-drug_max = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-drug_avg = self.Drug_avg_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-# 拼接后的维度将是原来的 2 倍
-drug_pool_feature = torch.cat([drug_max, drug_avg], dim=1)
-# --- 蛋白质特征池化 ---
-prot_max = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-prot_avg = self.Protein_avg_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-# 拼接后的维度将是原来的 2 倍
-prot_pool_feature = torch.cat([prot_max, prot_avg], dim=1)
-"""
