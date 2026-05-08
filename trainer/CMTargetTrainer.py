@@ -127,7 +127,7 @@ class CMTargetTrainer():
         
 
         print(f"—————————————————— epoch [{epoch_id+1}/{self.epochs}] ——————————————————")
-        pbar = tqdm(self.train_loader, desc="🚂 Training", leave=True, ncols=100, 
+        pbar = tqdm(self.train_loader, desc="🚂 Training", leave=True, ncols=100,
                     mininterval=1, disable=not is_atty) #nohub时，每15s写入一次
         for compound_batch, protein_batch, label_batch in pbar:        
 
@@ -249,7 +249,7 @@ class CMTargetTrainer():
             
             # 保存最优模型 & 早停 : f1最大
             if f1 > max_f1:
-                print("f1 was increased from {max_f1} to {f1} in epoch{i}.")
+                print(f"f1 was increased from {max_f1} to {f1} in epoch{i}.")
                 logger.update_true_score(y_true, y_score)
                 max_f1 = f1
                 wait = 0  

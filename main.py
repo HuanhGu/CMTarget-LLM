@@ -48,8 +48,8 @@ def prepare():
     parser.add_argument('-m', '--remark', type=str, default = "without MoE and selfAtt.")
     
     # 消融实验
-    parser.add_argument('--use_moe', type = bool, default=False)
-    parser.add_argument('--use_selfatt', type = bool, default=False)
+    parser.add_argument('--use_moe', type = bool, default=True)
+    parser.add_argument('--use_selfatt', type = bool, default=True)
     parser.add_argument('--use_cross_att', type = bool, default=False)
 
     args = parser.parse_args()
@@ -143,8 +143,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0508_1623.log 2>&1 &
-tail -f main_0508_1623.log
+nohup python -u main.py > main_0508_2029.log 2>&1 &
+tail -f main_0508_2029.log
 tail -f main_0507_2108_append.log
 ps -ef | grep main.py
 kill -9 <PID>

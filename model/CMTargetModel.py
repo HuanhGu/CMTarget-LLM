@@ -46,6 +46,8 @@ class CMTargetModel(nn.Module):
         # === 创建 打分 模型 ===
         if self.use_cross_att:
             self.cross_attention = cross_attention(head = 8, conv=self.hidden_dim)
+        else:
+            print("without cross-attention!!")
         self.scorer = Scorer(configs, self.hidden_dim)
 
 
@@ -83,8 +85,6 @@ class CMTargetModel(nn.Module):
         # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系
         if self.use_cross_att:
             drug_hidden ,pro_hidden = self.cross_attention(drug_hidden, pro_hidden)
-        else:
-            print("without cross-attention!!")
 
         predicted_scores = self.scorer(pro_hidden, drug_hidden) # 池化+打分
         
