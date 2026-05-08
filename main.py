@@ -45,12 +45,12 @@ def prepare():
     parser.add_argument('--hidden_dim', type = int, default='512', help="the dim of protein and drug in hidden layber.")#probert=1024, w2c=100, #chemberta=768
     parser.add_argument('--task', type=str, default = "train_tune",help="choose the stage : train_tune, train, finetune, predict")
     
-    parser.add_argument('-m', '--remark', type=str, default = "without MoE and selfAtt.")
+    parser.add_argument('-m', '--remark', type=str, default = "without selfAtt.")
     
     # 消融实验
     parser.add_argument('--use_moe', type = bool, default=True)
-    parser.add_argument('--use_selfatt', type = bool, default=True)
-    parser.add_argument('--use_cross_att', type = bool, default=False)
+    parser.add_argument('--use_selfatt', type = bool, default=False)
+    parser.add_argument('--use_cross_att', type = bool, default=True)
 
     args = parser.parse_args()
 
@@ -143,8 +143,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0508_2029.log 2>&1 &
-tail -f main_0508_2029.log
+nohup python -u main.py > main_0508_2335.log 2>&1 &
+tail -f main_0508_2335.log
 tail -f main_0507_2108_append.log
 ps -ef | grep main.py
 kill -9 <PID>
