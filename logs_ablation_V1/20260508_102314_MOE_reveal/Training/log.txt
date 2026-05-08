@@ -1,0 +1,39 @@
+Epoch [1/300] Train_loss = 0.6748, acc = 85.6937
+Epoch [1/300] Test_loss = 0.6332, recall = 0.8481, precision = 0.8928, f1 = 0.8698, accuracy = 0.8712, auc = 0.8716
+
+Epoch [2/300] Train_loss = 0.634, acc = 85.7876
+Epoch [2/300] Test_loss = 0.6029, recall = 0.8351, precision = 0.8768, f1 = 0.8554, accuracy = 0.8585, auc = 0.8586
+
+Epoch [3/300] Train_loss = 0.6059, acc = 86.2402
+Epoch [3/300] Test_loss = 0.5745, recall = 0.8208, precision = 0.8688, f1 = 0.8441, accuracy = 0.8468, auc = 0.8471
+
+Epoch [4/300] Train_loss = 0.5677, acc = 85.9887
+Epoch [4/300] Test_loss = 0.5443, recall = 0.8224, precision = 0.8779, f1 = 0.8492, accuracy = 0.852, auc = 0.8524
+
+Epoch [5/300] Train_loss = 0.5404, acc = 86.5386
+Epoch [5/300] Test_loss = 0.5156, recall = 0.8112, precision = 0.8583, f1 = 0.834, accuracy = 0.8423, auc = 0.8416
+
+Epoch [6/300] Train_loss = 0.5041, acc = 86.3207
+Epoch [6/300] Test_loss = 0.4874, recall = 0.8256, precision = 0.8512, f1 = 0.8381, accuracy = 0.8401, auc = 0.84
+
+Epoch [7/300] Train_loss = 0.4787, acc = 86.6425
+Epoch [7/300] Test_loss = 0.4598, recall = 0.8227, precision = 0.8739, f1 = 0.8475, accuracy = 0.8494, auc = 0.8499
+
+Epoch [8/300] Train_loss = 0.443, acc = 86.5554
+Epoch [8/300] Test_loss = 0.4304, recall = 0.8211, precision = 0.8588, f1 = 0.8395, accuracy = 0.84, auc = 0.8404
+
+Epoch [9/300] Train_loss = 0.419, acc = 86.9074
+Epoch [9/300] Test_loss = 0.408, recall = 0.8164, precision = 0.8455, f1 = 0.8307, accuracy = 0.8329, auc = 0.8329
+
+Epoch [10/300] Train_loss = 0.3857, acc = 86.5587
+Epoch [10/300] Test_loss = 0.3774, recall = 0.8196, precision = 0.8578, f1 = 0.8383, accuracy = 0.8386, auc = 0.839
+
+Epoch [11/300] Train_loss = 0.362, acc = 86.9175
+Epoch [11/300] Test_loss = 0.3511, recall = 0.8094, precision = 0.8455, f1 = 0.8267, accuracy = 0.8288, auc = 0.8293
+
+Epoch [12/300] Train_loss = 0.3317, acc = 86.5017
+Epoch [12/300] Test_loss = 0.3274, recall = 0.8154, precision = 0.8579, f1 = 0.8361, accuracy = 0.8373, auc = 0.8377
+
+Epoch [13/300] Train_loss = 0.3082, acc = 86.9845
+Epoch [13/300] Test_loss = 0.306, recall = 0.8256, precision = 0.834, f1 = 0.8297, accuracy = 0.8276, auc = 0.8276
+

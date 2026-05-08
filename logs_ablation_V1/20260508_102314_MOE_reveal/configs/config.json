@@ -6,14 +6,16 @@
     "learning_rate_pretrain": 2e-05,
     "learning_rate_tune": 2e-06,
     "model": "CMTarget",
-    "model_path": "./data/models/pretrain.pt",
+    "model_path": "logs/20260507_210834/checkpoints/pretrain_checkpoint_epoch150.pt",
     "patience": 30,
     "score_way": "Cosine",
     "source_name": "drugbank",
     "target_name": "hit",
-    "task": "finetune",
-    "timestamp": "20260502_003137",
+    "task": "train",
+    "timestamp": "20260508_102314",
     "token_dim_pro": 512,
     "token_dim_drug": 512,
-    "remark": "without feat_extract"
+    "remark": "without selfatt.",
+    "use_moe": true,
+    "use_selfatt": false
 }

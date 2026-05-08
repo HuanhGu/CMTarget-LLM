@@ -6,14 +6,16 @@
     "learning_rate_pretrain": 2e-05,
     "learning_rate_tune": 2e-06,
     "model": "CMTarget",
-    "model_path": "./data/models/pretrain.pt",
+    "model_path": "",
     "patience": 30,
     "score_way": "Cosine",
     "source_name": "drugbank",
     "target_name": "hit",
-    "task": "finetune",
-    "timestamp": "20260430_185942",
+    "task": "train",
+    "timestamp": "20260507_191611",
     "token_dim_pro": 512,
     "token_dim_drug": 512,
-    "remark": "fintune_lr2e-6"
+    "use_moe": false,
+    "use_selfatt": true,
+    "remark": "not use moe"
 }

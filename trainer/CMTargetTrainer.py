@@ -101,7 +101,7 @@ class CMTargetTrainer():
             model.load_model(model_path)
         else:
             #-weights 初始化
-            for p in self.model.parameters():
+            for p in model.parameters():
                 if p.dim() > 1:
                     nn.init.xavier_uniform_(p)
         return model

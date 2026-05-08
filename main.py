@@ -35,7 +35,7 @@ def prepare():
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-5 微调学习率应该更大还是更小？更小，约1/10 or 1/100
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
-    parser.add_argument('--model_path', type = str, default="logs/20260507_210834/checkpoints/pretrain_checkpoint_epoch150.pt")#./data/models/pretrain.pt
+    parser.add_argument('--model_path', type = str, default="")#./data/models/pretrain.pt
     # ./logs/20260507_210834/checkpoints/pretrain.pt
     
     parser.add_argument('--patience', type = int, default=30) 
@@ -47,14 +47,14 @@ def prepare():
     
     parser.add_argument('--token_dim_pro', type = int, default='512')#probert=1024, w2c=100
     parser.add_argument('--token_dim_drug', type = int, default='512')#chemberta=768
-    parser.add_argument('--task', type=str, default = "train", 
-                        help="choose the stage : train, finetune, predict")
+    parser.add_argument('--task', type=str, default = "train_tune", 
+                        help="choose the stage : train_tune, train, finetune, predict")
 
-    parser.add_argument('-m', '--remark', type=str, default = "without selfatt.")
+    parser.add_argument('-m', '--remark', type=str, default = "without MoE.")
     
     # 消融实验
-    parser.add_argument('--use_moe', type = bool, default=True)
-    parser.add_argument('--use_selfatt', type = bool, default=False)
+    parser.add_argument('--use_moe', type = bool, default=False)
+    parser.add_argument('--use_selfatt', type = bool, default=True)
 
     args = parser.parse_args()
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     
     start = datetime.now()
 
-    if configs['task'] == 'train':
+    if configs['task'] == 'train_tune':
         print(
         f"⚡[train model {configs['model']}]\n"
         f"  batch_size: {configs['batch_size']}\n"
@@ -125,6 +125,25 @@ if __name__ == '__main__':
         # 目标域微调
         fineTunner = FineTunner(configs, configs['target_name'], pretrain_output_path) # 加载pre_train完毕后的model_path, 作为初始值
         fineTunner.fineTune(fintune_output_path)    
+
+
+    elif configs['task'] == 'train':
+        print(
+        f"⚡[train model {configs['model']}]\n"
+        f"  batch_size: {configs['batch_size']}\n"
+        f"  epochs: {configs['epochs_train']} (pre) / {configs['epochs_tune']} (tune)\n"
+        f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
+        )
+        # 源域训练
+        trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path']) # 预训练输入的模型路径
+        trainer.train(pretrain_output_path)
+
+
+    elif configs['task'] == 'tune':
+        # 目标域微调
+        fineTunner = FineTunner(configs, configs['target_name'], configs['model_path']) # 加载pre_train完毕后的model_path, 作为初始值
+        fineTunner.fineTune(fintune_output_path)    
+
         
 
     elif configs['task'] == 'predict':
@@ -146,8 +165,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0507_2108_append.log 2>&1 &
-tail -f main_0507_2108.log
+nohup python -u main.py > main_0508_1143.log 2>&1 &
+tail -f main_0508_1143.log
 tail -f main_0507_2108_append.log
 ps -ef | grep main.py
 kill -9 <PID>
