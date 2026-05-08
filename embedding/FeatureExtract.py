@@ -21,7 +21,7 @@ class FeatureExtractor(object):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # 1. 预加载模型，避免在循环中重复加载
-        print("Loading ChemBERTa model...")
+        # print("Loading ChemBERTa model...")
         self.w2v_model = Word2Vec.load("./embedding/word2vec_30.model")
         
         local_model_path = "/root/gpufree-data/workplace/CMTarget-LLM/embedding/ChemBERTa/"

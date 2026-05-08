@@ -40,7 +40,7 @@ class CMTargetTrainer():
         self.use_moe = configs['use_moe']
 
         self.model = self.get_model(model_path)
-        print(self.model)
+        # print(self.model)
         # self.feature_extracror = FeatureExtractor()
         self.train_loader,self.test_loader = self.get_dataloader(source_name) #样本 3599, 29
 
@@ -128,7 +128,7 @@ class CMTargetTrainer():
 
         print(f"—————————————————— epoch [{epoch_id+1}/{self.epochs}] ——————————————————")
         pbar = tqdm(self.train_loader, desc="🚂 Training", leave=True, ncols=100, 
-                    mininterval=1 if is_atty else 30) #nohub时，每15s写入一次
+                    mininterval=1, disable=not is_atty) #nohub时，每15s写入一次
         for compound_batch, protein_batch, label_batch in pbar:        
 
             # 清空梯度
@@ -176,7 +176,7 @@ class CMTargetTrainer():
         with torch.no_grad():
             i = 1
             loop = tqdm(self.test_loader, desc="Evaluate_An_Epoch",position=0, leave=True,ncols=100,
-                        mininterval=1 if is_atty else 30) # nohub运行时，不再打印进度条   disable=not is_atty
+                        mininterval=1, disable=not is_atty) # nohub运行时，不再打印进度条   disable=not is_atty
             
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码
@@ -204,14 +204,14 @@ class CMTargetTrainer():
                 
                 # 当前值
                 current_metrics = dict(zip(metric_names, results)) 
-                loop.set_description(f'Evaluate metrics:')
+                loop.set_description(f'🚂Evaluating')
                 loop.set_postfix(
                     loss=f"{loss.item():.4f}", 
-                    f1=round(current_metrics['f1'], 4),
-                    recall=round(current_metrics['recall'], 4), 
-                    pre=round(current_metrics['precision'], 4), 
-                    acc=round(current_metrics['accuracy'], 4), 
-                    auc=round(current_metrics['auc'], 4)
+                    # f1=round(current_metrics['f1'], 4),
+                    # recall=round(current_metrics['recall'], 4), 
+                    # pre=round(current_metrics['precision'], 4), 
+                    # acc=round(current_metrics['accuracy'], 4), 
+                    # auc=round(current_metrics['auc'], 4)
                 )
                 
                 i += 1
@@ -221,8 +221,8 @@ class CMTargetTrainer():
             # 计算+打印  指标平均值
             avg_loss = np.average(running_loss)
             avg_metrics = {name: sum(values)/len(values) for name, values in metrics.items()}
-            print(f"Evaluate Epoch [{epoch_id+1}/{self.epochs}] Average Metrics:  avg_loss= {avg_loss:.4f}") 
-            print(" | ".join([f"{name}: {avg_metrics[name]:.4f}" for name in metric_names]))
+            out_str = ", ".join([f"{name}: {avg_metrics[name]:.4f}" for name in metric_names])
+            print(f"Evaluate Epoch [{epoch_id+1}/{self.epochs}],  Loss= {avg_loss:.4f}, {out_str}") 
 
         return avg_metrics['recall'], avg_metrics['precision'], avg_metrics['f1'], avg_metrics['accuracy'], avg_metrics['auc'], \
                 y_true, y_score, avg_loss
@@ -267,4 +267,4 @@ class CMTargetTrainer():
                 self.model.save_model(checkpoint_path)
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path} 💾")
 
-        print(f"\n✅ preTraining finished, model has been saved to {output_path}")
+        print(f"✅ preTraining finished, model has been saved to {output_path}\n")

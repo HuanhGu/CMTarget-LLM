@@ -104,31 +104,26 @@ class FineTunner():
         # 1. 初始化原始模型
         model = CMTargetModel(self.configs)
         if model_path != '':
-            print('\nGet model from:', model_path)
+            # 加载预训练模型
+            print('Get model from:', model_path)
             model.load_model(model_path)
 
-            # 微调层
-            target_modules=[
-            # 1. 蛋白质与药物的 Attention 部分
-            "W_Q", "W_K", "W_V", 
-            # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
-            "gate_proj","up_proj",  # "down_proj",
-            # 3. MoE 的门控机制
-            # "gate.0", "shared_expert_gate",
-            # 4. Scorer 评分层中的线性层
-            # "d_a", "p_a", "tune_linear1", "linear2"
-        ]
 
+        # 2. 定义 LoRA 配置
+        # 微调层
+        target_modules=[
+        "W_Q", "W_K", "W_V",    # 1. 蛋白质与药物的 Attention 部分
+        "gate_proj","up_proj",  # "down_proj",   # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
+        # "gate.0", "shared_expert_gate",       # 3. MoE 的门控机制
+        # "d_a", "p_a", "tune_linear1", "linear2"       # 4. Scorer 评分层中的线性层
+        ]
         # 全训练层
         modules_to_save=[
             # "W_Q", "W_K", "W_V", 
             "down_proj", # "gate_proj", "up_proj",
             "gate.0", "shared_expert_gate","shared_expert.gate_proj","shared_expert.up_proj","shared_expert.down_proj"
             "d_a", "p_a", "tune_linear1", "linear2"
-            ]
-
-        
-        # 2. 定义 LoRA 配置
+        ]
         lora_config = LoraConfig(
             r=32,                # 秩大小，可根据显存调整 (8, 16, 32)
             lora_alpha=64,       # 缩放系数，通常为 r 的 2 倍
@@ -138,16 +133,27 @@ class FineTunner():
             bias="none",
             task_type=None  # 你在预测蛋白-药物评分
         )
+        
 
-        # 3. 包装模型
-        model = get_peft_model(model, lora_config)
-        model.print_trainable_parameters()  
-        #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
-        print(f"lora_config:{lora_config}")
-        print(f"target_modules:{target_modules}")
-        print(f"modules_to_save:{modules_to_save}")
+        # 3. 检查模型中存在的 target_modules
+        existing_modules = []
+        for name, _ in model.named_modules():
+            for tm in target_modules:
+                if tm in name:
+                    existing_modules.append(tm)
 
-        return model
+        if not existing_modules:
+            print("⚠️ Warning: No target modules found in the model. Skipping LoRA injection.")
+            return model  # 直接返回原模型
+        else:
+            print(f"✅ Applying LoRA to modules: {existing_modules}")
+            # 更新配置，只保留实际存在的模块
+            lora_config.target_modules = existing_modules
+            model = get_peft_model(model, lora_config)
+            model.print_trainable_parameters()      #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
+            
+            print(f"lora_config:{lora_config}")
+            return model
 
 
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
@@ -171,7 +177,7 @@ class FineTunner():
 
         print(f"—————————————————— epoch [{epoch_id+1}/{self.epochs}] ——————————————————")
         pbar = tqdm(self.train_loader, desc=f"Train Epoch", position=0, leave=True, ncols=100,
-                    mininterval=1 if is_atty else 10) #nohub时，每15s写入一次)
+                    mininterval=1,  disable=not is_atty) 
         for compound_batch, protein_batch, label_batch in pbar:
             self.optimizer.zero_grad()
 
@@ -215,7 +221,7 @@ class FineTunner():
         with torch.no_grad():
             i = 1
             loop = tqdm(self.test_loader, smoothing=0, position=0, leave=True,
-                        mininterval=1 if is_atty else 10)
+                        mininterval=1, disable=not is_atty)
             
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
@@ -244,14 +250,14 @@ class FineTunner():
                     metrics[name].append(val)
                 # 当前值
                 current_metrics = dict(zip(metric_names, results)) 
-                loop.set_description(f'Evaluate metrics:')
+                loop.set_description(f'🚂Evaluating')
                 loop.set_postfix(
                     loss=f"{loss.item():.4f}", 
-                    f1=round(current_metrics['f1'], 4),
-                    recall=round(current_metrics['recall'], 4), 
-                    pre=round(current_metrics['precision'], 4), 
-                    acc=round(current_metrics['accuracy'], 4), 
-                    auc=round(current_metrics['auc'], 4)
+                    # f1=round(current_metrics['f1'], 4),
+                    # recall=round(current_metrics['recall'], 4), 
+                    # pre=round(current_metrics['precision'], 4), 
+                    # acc=round(current_metrics['accuracy'], 4), 
+                    # auc=round(current_metrics['auc'], 4)
                 )
                 # bls=f"{load_balancing_loss.item():.4f}",
                 # pls= f"{pred_loss.item():.4f}"
@@ -262,8 +268,8 @@ class FineTunner():
 
             avg_loss = np.average(running_loss)
             avg_metrics = {name: sum(values)/len(values) for name, values in metrics.items()}
-            print(f"Evaluate Epoch [{epoch_id+1}/{self.epochs}] Average Metrics:  avg_loss= {avg_loss:.4f}") 
-            print(" | ".join([f"{name}: {avg_metrics[name]:.4f}" for name in metric_names]))
+            out_str = ", ".join([f"{name}: {avg_metrics[name]:.4f}" for name in metric_names])
+            print(f"Evaluate Epoch [{epoch_id+1}/{self.epochs}], avg_loss= {avg_loss:.4f}, {out_str}") 
 
         return avg_metrics['recall'], avg_metrics['precision'], avg_metrics['f1'], avg_metrics['accuracy'], avg_metrics['auc'], \
                 y_true, y_score, avg_loss
@@ -271,7 +277,7 @@ class FineTunner():
 
     
     def fineTune(self, output_path):
-        print("\n🚀 start fine-Tuning...")
+        print("🚀 start fine-Tuning...")
 
         logger = TrainLogger(f"FineTuning", self.configs['timestamp'])
         max_f1 = 0
