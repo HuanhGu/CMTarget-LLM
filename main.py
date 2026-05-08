@@ -9,7 +9,6 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from datetime import datetime
 
-# from embedding.dataset_build import *
 from embedding.FeatureExtract import FeatureExtractor
 
 from model.scorer import *
@@ -33,23 +32,19 @@ def prepare():
     parser.add_argument('-eptr', '--epochs_train', type=int, default = 300)#300
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#200
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
-    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-5 微调学习率应该更大还是更小？更小，约1/10 or 1/100
-    parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
-    parser.add_argument('--model_path', type = str, default="")#./data/models/pretrain.pt
-    # ./logs/20260507_210834/checkpoints/pretrain.pt
+    parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-6 微调学习率应该更大还是更小？更小，约1/10 or 1/100
+    parser.add_argument('--model_path', type = str, default="") #./data/models/pretrain.pt
     
     parser.add_argument('--patience_train', type = int, default=15) 
     parser.add_argument('--patience_tune', type = int, default=30) 
-    parser.add_argument('-score', '--score_way', type=str, default='Cosine', help="choose a scorer, MF,GMF,Cosine ")
+    parser.add_argument('-score', '--score_way', type=str, default='Cosine', help="choose a scorer, MF,GMF,Cosine.")
     
     parser.add_argument('-s', '--source_name', type = str, default="drugbank")#drugbank
     parser.add_argument('-t', '--target_name', default='hit')#hit
     
-    parser.add_argument('--token_dim_pro', type = int, default='512')#probert=1024, w2c=100
-    parser.add_argument('--token_dim_drug', type = int, default='512')#chemberta=768
-    parser.add_argument('--task', type=str, default = "train_tune", 
-                        help="choose the stage : train_tune, train, finetune, predict")
-
+    parser.add_argument('--hidden_dim', type = int, default='512', help="the dim of protein and drug in hidden layber.")#probert=1024, w2c=100, #chemberta=768
+    parser.add_argument('--task', type=str, default = "train_tune",help="choose the stage : train_tune, train, finetune, predict")
+    
     parser.add_argument('-m', '--remark', type=str, default = "without MoE.")
     
     # 消融实验
@@ -66,23 +61,19 @@ def prepare():
     config['epochs_tune'] = args.epochs_tune 
     config['learning_rate_pretrain'] = args.learning_rate_pretrain
     config['learning_rate_tune'] = args.learning_rate_tune
-
-    config['model'] = args.model_name
+    
     config['model_path'] = args.model_path
     config['patience_train']=args.patience_train
     config['patience_tune']=args.patience_tune
 
     config['score_way'] = args.score_way
-    # config['score_dim'] = args.score_emb_dim
     config['source_name'] = args.source_name
     config['target_name'] = args.target_name
     config['task'] = args.task
     config['timestamp'] = timestamp
-    config['token_dim_pro'] = args.token_dim_pro
-    config['token_dim_drug'] = args.token_dim_drug
+    config['hidden_dim'] = args.hidden_dim
     config['remark'] = args.remark
 
-    
     config['use_moe'] = args.use_moe
     config['use_selfatt'] = args.use_selfatt
     
@@ -111,48 +102,32 @@ if __name__ == '__main__':
     fintune_output_path = model_output_dir / "fineTune.pt"
     
     start = datetime.now()
-
+    
+    print( f"⚡The current task is {configs['task']}." )
     if configs['task'] == 'train_tune':
-        print(
-        f"⚡[train model {configs['model']}]\n"
-        f"  batch_size: {configs['batch_size']}\n"
-        f"  epochs: {configs['epochs_train']} (pre) / {configs['epochs_tune']} (tune)\n"
-        f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
-        )
         # 源域训练
         trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path']) # 预训练输入的模型路径
         trainer.train(pretrain_output_path)
-        
         # 目标域微调
         fineTunner = FineTunner(configs, configs['target_name'], pretrain_output_path) # 加载pre_train完毕后的model_path, 作为初始值
         fineTunner.fineTune(fintune_output_path)    
 
 
     elif configs['task'] == 'train':
-        print(
-        f"⚡[train model {configs['model']}]\n"
-        f"  batch_size: {configs['batch_size']}\n"
-        f"  epochs: {configs['epochs_train']} (pre) / {configs['epochs_tune']} (tune)\n"
-        f"  lr: {configs['learning_rate_pretrain']} (pre) / {configs['learning_rate_tune']} (tune)"
-        )
         # 源域训练
-        trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path']) # 预训练输入的模型路径
+        trainer = CMTargetTrainer(configs, configs['source_name'], configs['model_path']) # 加载指定的model_path(如断点文件), 作为初始值
         trainer.train(pretrain_output_path)
-
 
     elif configs['task'] == 'tune':
         # 目标域微调
-        fineTunner = FineTunner(configs, configs['target_name'], configs['model_path']) # 加载pre_train完毕后的model_path, 作为初始值
+        fineTunner = FineTunner(configs, configs['target_name'], configs['model_path']) # 加载指定的model_path(如某个地方的最优文件), 作为初始值
         fineTunner.fineTune(fintune_output_path)    
 
-        
 
     elif configs['task'] == 'predict':
         if not os.path.exists(configs['model_path']):
-            print("please make sure the configs['model_path'] is exist." \
-            "If it is none, please execute the training phase")
+            print("please make sure the configs['model_path'] is exist. If it is none, please execute the training phase")
             sys.exit()
-        
         predictor = CMTargetPredictor(configs, configs['model_path'])#model
         predictor.predict()
 

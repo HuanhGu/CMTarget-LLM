@@ -94,11 +94,8 @@ class CMTargetModel(nn.Module):
         self.configs = configs
         self.stamp = configs['timestamp']
         self.device = configs['device']
-
-        # self.pro_hid_dim = configs['token_dim_pro'] #每个token的维度  probert=100, w2C=100 
-        # self.drug_hid_dim = configs['token_dim_drug']  # 每个token的维度 chemberta 768
-
-        self.hidden_dim = configs['token_dim_pro']
+        
+        self.hidden_dim = configs['hidden_dim']
         self.moe_emb_dim = 1024      # 3 专家编码参数
         self.use_selfatt = configs['use_selfatt']
         self.use_moe = configs['use_moe']
