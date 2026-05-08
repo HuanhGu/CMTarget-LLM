@@ -7,6 +7,7 @@ import os
 import h5py
 from torchinfo import summary
 from pathlib import Path
+import sys
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -33,7 +34,7 @@ class CMTargetTrainer():
         self.learning_rate = configs['learning_rate_pretrain']
         self.epochs = configs['epochs_train']
         self.batch_size = configs['batch_size']
-        self.patience = configs['patience']
+        self.patience = configs['patience_train']
         self.checkpoint_interval = configs['checkpoint_interval']
         self.use_selfatt = configs['use_selfatt']
         self.use_moe = configs['use_moe']
@@ -122,17 +123,19 @@ class CMTargetTrainer():
         running_loss = []
         correct = 0
         total = 0
+        is_atty = sys.stdout.isatty()
         
-        # [smiles, seq, label]
-        pbar = tqdm(self.train_loader, desc="🚂 Training", leave=True, ncols=100)
+
+        print(f"—————————————————— epoch [{epoch_id+1}/{self.epochs}] ——————————————————")
+        pbar = tqdm(self.train_loader, desc="🚂 Training", leave=True, ncols=100, 
+                    mininterval=1 if is_atty else 30) #nohub时，每15s写入一次
         for compound_batch, protein_batch, label_batch in pbar:        
 
             # 清空梯度
             self.optimizer.zero_grad()
 
             # 前向传播：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
-            # 1打分, 2损失
-            logits, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)
+            logits, contrastive_Loss, load_balancing_loss = model(protein_batch, compound_batch)# 1打分, 2损失
             
             # 计算预测损失  [2]  [2,1]
             label_batch = label_batch.to(self.device)            
@@ -150,7 +153,6 @@ class CMTargetTrainer():
             running_loss.append(loss.item())
 
             # 计算准确率
-
             pred_score = torch.sigmoid(logits)
             predicted = (pred_score > 0.5).float()  # 将输出转换为0或1
             correct += (predicted == label_batch).sum().item()
@@ -167,48 +169,39 @@ class CMTargetTrainer():
         evl_model = evl_model.to(self.device)
         evl_model.eval()
 
-        threshold = 0.5
         y_true, y_score, running_loss, targets, predicts =[], [], [], [], []
-        # 初始化一个包含所有指标名的字典，值为空列表
         metrics = {name: [] for name in ["recall", "precision", "f1", "accuracy", "auc"]}
 
+        is_atty = sys.stdout.isatty()
         with torch.no_grad():
             i = 1
-            total = len(self.test_loader)-1  #305
-            loop = tqdm(self.test_loader, total=total, desc="Evaluate_An_Epoch",
-                        position=0, leave=True,ncols=100,ascii=False)
-            #  smoothing=0, mininterval=1.0,
-
+            loop = tqdm(self.test_loader, desc="Evaluate_An_Epoch",position=0, leave=True,ncols=100,
+                        mininterval=1 if is_atty else 30) # nohub运行时，不再打印进度条   disable=not is_atty
+            
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码
-                logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              
+                logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)    
+
+                # 损失
                 label_batch = label_batch.to(self.device)
                 pred_loss = self.criterion(logits, label_batch)
-                # 如果你外接了 nn.BCEWithLogitsLoss（它内部带 Sigmoid），
-                # 那么 $\text{Sigmoid}(0.2) \approx 0.55$，$\text{Sigmoid}(0.7) \approx 0.67$。
-                
                 loss = self.get_loss(contrastive_Loss, load_balancing_loss, pred_loss)
                 running_loss.append(loss.item())
 
-                pred_score = torch.sigmoid(logits)
-                pred = (pred_score > 0.5).float()  # 将输出转换为0或1
                 # 预测list 和  真值list
+                pred_score = torch.sigmoid(logits)
+                pred = (pred_score > 0.5).float()  # 预测标签
                 targets.extend(label_batch.tolist())
                 predicts.extend(pred.tolist())
                 arr_targets = np.array(targets)
                 arr_predicts = np.array(predicts)
 
-                # 评价指标_这里的roc有问题输入应该是概率
-                # recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)                
-                # loop.set_description(f'Evaluate Batch [{i-1}/{total}]')
-                # loop.set_postfix(loss=f"{loss.item():.4f}", f1=round(f1, 4),
-                #     recall=round(recall, 4), pre=round(precision, 4), 
-                #     acc=round(accuracy, 4), auc=round(auc, 4))
+
                 results = calculate_metrics(arr_targets, arr_predicts)
-                metric_names = ["recall", "precision", "f1", "accuracy", "auc"]  
-                # 批量存入字典,用于计算后续平均值            
+                metric_names = ["recall", "precision", "f1", "accuracy", "auc"]          
                 for name, val in zip(metric_names, results):
                     metrics[name].append(val)
+                
                 # 当前值
                 current_metrics = dict(zip(metric_names, results)) 
                 loop.set_description(f'Evaluate metrics:')
@@ -224,8 +217,12 @@ class CMTargetTrainer():
                 i += 1
                 y_true += label_batch.tolist()
                 y_score += pred_score.tolist()
+
+            # 计算+打印  指标平均值
             avg_loss = np.average(running_loss)
             avg_metrics = {name: sum(values)/len(values) for name, values in metrics.items()}
+            print(f"Evaluate Epoch [{epoch_id+1}/{self.epochs}] Average Metrics:  avg_loss= {avg_loss:.4f}") 
+            print(" | ".join([f"{name}: {avg_metrics[name]:.4f}" for name in metric_names]))
 
         return avg_metrics['recall'], avg_metrics['precision'], avg_metrics['f1'], avg_metrics['accuracy'], avg_metrics['auc'], \
                 y_true, y_score, avg_loss

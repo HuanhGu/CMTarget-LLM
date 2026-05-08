@@ -6,6 +6,7 @@ import os
 import h5py
 from torchinfo import summary
 from pathlib import Path
+import sys
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -24,10 +25,7 @@ from torch.utils.data import TensorDataset, DataLoader, random_split
 '''
 1. ⚠️ 注意：如果 linear2 是输出层（例如 [hidden → 1]），低秩矩阵的作用可能有限，因为矩阵很小。
 这种方式是不使用 LoRA，直接微调原始权重
-
 2. get_peft_model 会自动冻结所有非 LoRA 参数
-
-
 '''
 
 
@@ -45,7 +43,7 @@ class FineTunner():
         self.learning_rate = configs['learning_rate_tune']
         self.epochs = configs['epochs_tune']
         self.batch_size = configs['batch_size']
-        self.patience = configs['patience']
+        self.patience = configs['patience_tune']
         self.checkpoint_interval = configs['checkpoint_interval']
         
         self.use_selfatt = configs['use_selfatt']
@@ -169,9 +167,11 @@ class FineTunner():
         running_loss = []
         correct = 0
         total = 0
+        is_atty = sys.stdout.isatty()
 
-        print(f"****** Epoch [{epoch_id+1}/{self.epochs}] *****")
-        pbar = tqdm(self.train_loader, desc=f"Train Epoch", position=0, leave=True, ncols=100)
+        print(f"—————————————————— epoch [{epoch_id+1}/{self.epochs}] ——————————————————")
+        pbar = tqdm(self.train_loader, desc=f"Train Epoch", position=0, leave=True, ncols=100,
+                    mininterval=1 if is_atty else 10) #nohub时，每15s写入一次)
         for compound_batch, protein_batch, label_batch in pbar:
             self.optimizer.zero_grad()
 
@@ -209,14 +209,13 @@ class FineTunner():
         evl_model.eval()
 
         y_true, y_score, running_loss, targets, predicts =[], [], [], [], []
-        # 初始化一个包含所有指标名的字典，值为空列表
         metrics = {name: [] for name in ["recall", "precision", "f1", "accuracy", "auc"]}
 
+        is_atty = sys.stdout.isatty()
         with torch.no_grad():
             i = 1
-            total = len(self.test_loader)
-            loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0,
-                        position=0, leave=True,dynamic_ncols=True,ascii=False)
+            loop = tqdm(self.test_loader, smoothing=0, position=0, leave=True,
+                        mininterval=1 if is_atty else 10)
             
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
@@ -263,6 +262,8 @@ class FineTunner():
 
             avg_loss = np.average(running_loss)
             avg_metrics = {name: sum(values)/len(values) for name, values in metrics.items()}
+            print(f"Evaluate Epoch [{epoch_id+1}/{self.epochs}] Average Metrics:  avg_loss= {avg_loss:.4f}") 
+            print(" | ".join([f"{name}: {avg_metrics[name]:.4f}" for name in metric_names]))
 
         return avg_metrics['recall'], avg_metrics['precision'], avg_metrics['f1'], avg_metrics['accuracy'], avg_metrics['auc'], \
                 y_true, y_score, avg_loss

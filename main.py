@@ -38,9 +38,9 @@ def prepare():
     parser.add_argument('--model_path', type = str, default="")#./data/models/pretrain.pt
     # ./logs/20260507_210834/checkpoints/pretrain.pt
     
-    parser.add_argument('--patience', type = int, default=30) 
-    parser.add_argument('-score', '--score_way', type=str, default='Cosine', 
-                        help="choose a scorer, MF,GMF,Cosine ")
+    parser.add_argument('--patience_train', type = int, default=15) 
+    parser.add_argument('--patience_tune', type = int, default=30) 
+    parser.add_argument('-score', '--score_way', type=str, default='Cosine', help="choose a scorer, MF,GMF,Cosine ")
     
     parser.add_argument('-s', '--source_name', type = str, default="drugbank")#drugbank
     parser.add_argument('-t', '--target_name', default='hit')#hit
@@ -69,7 +69,8 @@ def prepare():
 
     config['model'] = args.model_name
     config['model_path'] = args.model_path
-    config['patience']=args.patience
+    config['patience_train']=args.patience_train
+    config['patience_tune']=args.patience_tune
 
     config['score_way'] = args.score_way
     # config['score_dim'] = args.score_emb_dim
