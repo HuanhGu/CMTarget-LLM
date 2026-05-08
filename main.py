@@ -35,7 +35,8 @@ def prepare():
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-5 微调学习率应该更大还是更小？更小，约1/10 or 1/100
     parser.add_argument('-mod', '--model_name', type=str, default = "CMTarget")
-    parser.add_argument('--model_path', type = str, default="")#./data/models/pretrain.pt
+    parser.add_argument('--model_path', type = str, default="logs/20260507_210834/checkpoints/pretrain_checkpoint_epoch150.pt")#./data/models/pretrain.pt
+    # ./logs/20260507_210834/checkpoints/pretrain.pt
     
     parser.add_argument('--patience', type = int, default=30) 
     parser.add_argument('-score', '--score_way', type=str, default='Cosine', 
@@ -145,8 +146,9 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0507_2108.log 2>&1 &
+nohup python -u main.py > main_0507_2108_append.log 2>&1 &
 tail -f main_0507_2108.log
+tail -f main_0507_2108_append.log
 ps -ef | grep main.py
 kill -9 <PID>
 """

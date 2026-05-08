@@ -84,25 +84,21 @@ class FineTunner():
     def get_dataloader(self, dataname="hit"):
             """ 得到分词结果 """
 
-            " 1. 读取序列数据集 "
-            csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
-            d_df = pd.read_csv(csv_path) 
-            # d_df = d_df[:4499] 
-            # d_df = d_df[:300] 
-            "特征提取"
-            full_dataset = DTIDataset(d_df)       # drug,pro,label
+            csv_dir = Path('data/dataset')  / dataname 
 
-            "数据集划分"
-            total_size = len(full_dataset)
-            train_size = int(0.8 * total_size)
-            test_size = total_size - train_size
-            train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+            train_df = pd.read_csv(csv_dir / 'train.csv')
+            train_dataset = DTIDataset(train_df)
+            train_size = len(train_dataset)
 
-            "得到dataloader"
-            train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
-            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size, num_workers=0)
-            print(f"总数据数目:{total_size}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
+            test_df = pd.read_csv(csv_dir / 'test.csv')
+            test_dataset = DTIDataset(test_df)
+            test_size = len(test_dataset)
 
+            train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=False, num_workers=0)
+            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=False, num_workers=0)
+            
+            print(f"总数据数目:{train_size+test_size}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
+            
             return train_load, test_load
 
 
@@ -221,7 +217,7 @@ class FineTunner():
             total = len(self.test_loader)
             loop = tqdm(self.test_loader, total=total, smoothing=0, mininterval=1.0,
                         position=0, leave=True,dynamic_ncols=True,ascii=False)
-
+            
             for compound_batch, protein_batch, label_batch in loop:
                 # 预测结果：三种模态特征对齐融合+MoE编码 in:[3,2,501,100]  [3,2,68,768]
                 logits, contrastive_Loss, load_balancing_loss = evl_model(protein_batch, compound_batch)              

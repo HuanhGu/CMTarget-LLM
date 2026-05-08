@@ -109,11 +109,13 @@ class CMTargetModel(nn.Module):
 
         # === 创建 fusion 模型 =====
         if self.use_selfatt:
+            print("keep self-attention!!")
             self.sequence_attention_pro = SelfAttention(self.hidden_dim, self.hidden_dim, self.hidden_dim)
             self.sequence_attention_drug = SelfAttention(self.hidden_dim, self.hidden_dim, self.hidden_dim)
 
         # === 创建 基础专家 模型 ===
         if self.use_moe:
+            print("keep MoE!!")
             self.basic_pro_moe = Qwen2MoeSparseMoeBlock(self.hidden_dim, self.moe_emb_dim, 6)
             self.basic_drug_moe = Qwen2MoeSparseMoeBlock(self.hidden_dim, self.moe_emb_dim, 6)   # (feature_in, feature_out, expert_num)[768,256]
 

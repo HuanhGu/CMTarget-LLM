@@ -48,11 +48,8 @@ class CMTargetTrainer():
         self.loss_balancer = MultiTaskLossWrapper(task_num=2).to(self.device) # loss均衡器[只写在这里不可训练，必须加到优化器里]
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
+        
 
-        #-weights 初始化
-        for p in self.model.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
         weight_p, bias_p = [], []
         for name, p in self.model.named_parameters():
             if 'bias' in name:
@@ -75,33 +72,38 @@ class CMTargetTrainer():
     def get_dataloader(self, dataname = 'hit'):
             """ 得到分词结果 """
 
-            " 1. 读取序列数据集 "
-            csv_path = Path('data') / 'dataset' / dataname / f'{dataname}.csv'
-            d_df = pd.read_csv(csv_path) 
-            # d_df = d_df[:4499] 
-            # d_df = d_df[:300] 
-            "特征提取"
-            full_dataset = DTIDataset(d_df)       # drug,pro,label
+            csv_dir = Path('data/dataset')  / dataname 
 
-            "数据集划分"
-            total_size = len(full_dataset)
-            train_size = int(0.8 * total_size)
-            test_size = total_size - train_size
-            train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+            train_df = pd.read_csv(csv_dir / 'train.csv')
+            train_dataset = DTIDataset(train_df)
+            train_size = len(train_dataset)
 
-            "得到dataloader"
-            train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
-            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=True, num_workers=0)
-            print(f"总数据数目:{total_size}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
+            test_df = pd.read_csv(csv_dir / 'test.csv')
+            test_dataset = DTIDataset(test_df)
+            test_size = len(test_dataset)
+
+            train_load = DataLoader(dataset=train_dataset,batch_size=self.batch_size,shuffle=False, num_workers=0)
+            test_load = DataLoader(dataset=test_dataset,batch_size=self.batch_size,shuffle=False, num_workers=0)
+            
+            print(f"总数据数目:{train_size+test_size}, 训练集数目:{train_size}, 测试集数目:{test_size}.")
             
             return train_load, test_load
-
+    
+            " 1. 读取序列数据集 "
+            "特征提取"
+            "数据集划分"
+            "得到dataloader"
 
     def get_model(self, model_path):
         model = CMTargetModel(self.configs)
         if model_path != '':
             print('Get model from:', model_path)
             model.load_model(model_path)
+        else:
+            #-weights 初始化
+            for p in self.model.parameters():
+                if p.dim() > 1:
+                    nn.init.xavier_uniform_(p)
         return model
     
     def get_loss(self, contrastive_Loss, load_balancing_loss, pred_loss):
@@ -165,13 +167,12 @@ class CMTargetTrainer():
         evl_model = evl_model.to(self.device)
         evl_model.eval()
 
-        targets, predicts = list(), list()
         threshold = 0.5
-        running_loss = []
+        y_true, y_score, running_loss, targets, predicts =[], [], [], [], []
+        # 初始化一个包含所有指标名的字典，值为空列表
+        metrics = {name: [] for name in ["recall", "precision", "f1", "accuracy", "auc"]}
 
         with torch.no_grad():
-            y_true = []
-            y_score = []
             i = 1
             total = len(self.test_loader)-1  #305
             loop = tqdm(self.test_loader, total=total, desc="Evaluate_An_Epoch",
@@ -198,19 +199,36 @@ class CMTargetTrainer():
                 arr_predicts = np.array(predicts)
 
                 # 评价指标_这里的roc有问题输入应该是概率
-                recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)
-                
-                loop.set_description(f'Evaluate Batch [{i-1}/{total}]')
-                loop.set_postfix(loss=f"{loss.item():.4f}", f1=round(f1, 4),
-                    recall=round(recall, 4), pre=round(precision, 4), 
-                    acc=round(accuracy, 4), auc=round(auc, 4))
+                # recall, precision, f1, accuracy, auc = calculate_metrics(arr_targets, arr_predicts)                
+                # loop.set_description(f'Evaluate Batch [{i-1}/{total}]')
+                # loop.set_postfix(loss=f"{loss.item():.4f}", f1=round(f1, 4),
+                #     recall=round(recall, 4), pre=round(precision, 4), 
+                #     acc=round(accuracy, 4), auc=round(auc, 4))
+                results = calculate_metrics(arr_targets, arr_predicts)
+                metric_names = ["recall", "precision", "f1", "accuracy", "auc"]  
+                # 批量存入字典,用于计算后续平均值            
+                for name, val in zip(metric_names, results):
+                    metrics[name].append(val)
+                # 当前值
+                current_metrics = dict(zip(metric_names, results)) 
+                loop.set_description(f'Evaluate metrics:')
+                loop.set_postfix(
+                    loss=f"{loss.item():.4f}", 
+                    f1=round(current_metrics['f1'], 4),
+                    recall=round(current_metrics['recall'], 4), 
+                    pre=round(current_metrics['precision'], 4), 
+                    acc=round(current_metrics['accuracy'], 4), 
+                    auc=round(current_metrics['auc'], 4)
+                )
                 
                 i += 1
                 y_true += label_batch.tolist()
                 y_score += pred_score.tolist()
             avg_loss = np.average(running_loss)
+            avg_metrics = {name: sum(values)/len(values) for name, values in metrics.items()}
 
-        return recall, precision, f1, accuracy, auc, y_true, y_score, avg_loss
+        return avg_metrics['recall'], avg_metrics['precision'], avg_metrics['f1'], avg_metrics['accuracy'], avg_metrics['auc'], \
+                y_true, y_score, avg_loss
 
 
 

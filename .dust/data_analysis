@@ -1,0 +1,12 @@
+(cmtarget) root@gpufree-container:~/gpufree-data/workplace/CMTarget-LLM# /root/application/miniconda3/envs/cmtarget/bin/python /root/gpufree-data/workplace/CMTarget-LLM/data/dataset/drugbank/split.py
+总样本数: 37283
+训练集大小: 29826 (80%)
+测试集大小: 7457 (20%)
+(cmtarget) root@gpufree-container:~/gpufree-data/workplace/CMTarget-LLM# /root/application/miniconda3/envs/cmtarget/bin/python /root/gpufree-data/workplace/CMTarget-LLM/data/split.py
+总样本数: 4499
+训练集大小: 3599 (80%)
+测试集大小: 900 (20%)
+(cmtarget) root@gpufree-container:~/gpufree-data/workplace/CMTarget-LLM# /root/application/miniconda3/envs/cmtarget/bin/python /root/gpufree-data/workplace/CMTarget-LLM/data/split.py
+总样本数: 62490
+训练集大小: 49992 (80%)
+测试集大小: 12498 (20%)
