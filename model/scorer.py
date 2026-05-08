@@ -4,9 +4,6 @@ import torch.nn.functional as F
 from model import *
 
 
-# from data_process import *
-
-
 class GMF(torch.nn.Module):
     def __init__(self, emb_dim):
         super().__init__()
@@ -70,9 +67,9 @@ class SelfAttentionPooling(nn.Module):
         pooled = torch.sum(x * attn_weights, dim=-2) / (torch.sum(attn_weights, dim=-2) + 1e-6)
         return pooled, attn_weights
 
-class mutil_head_attention(nn.Module):
+class cross_attention(nn.Module):
     def __init__(self,head = 8,conv=32):
-        super(mutil_head_attention,self).__init__()
+        super(cross_attention,self).__init__()
         self.conv = conv #256
         self.head = head
         self.relu = nn.ReLU()
@@ -111,16 +108,11 @@ class Scorer(torch.nn.Module):
     def __init__(self, configs, moe_emb_dim):
         super().__init__()
         self.fea_dim = moe_emb_dim  # pro_dim, drug_dim, 256
-        self.emb_dim = self.fea_dim
+        # self.emb_dim = self.fea_dim
 
-        self.attention = mutil_head_attention(head = 8, conv=self.fea_dim)
-        # self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
-        # self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
-        # self.Drug_avg_pool = nn.AdaptiveAvgPool1d(1)
-        # self.Protein_avg_pool = nn.AdaptiveAvgPool1d(1)
-
-        self.user_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
-        self.item_pooling = SelfAttentionPooling(self.fea_dim, self.emb_dim)
+        # self.attention = cross_attention(head = 8, conv=self.fea_dim)
+        self.user_pooling = SelfAttentionPooling(self.fea_dim, self.fea_dim)
+        self.item_pooling = SelfAttentionPooling(self.fea_dim, self.fea_dim)
         
 
         if configs['score_way'] == 'MF':
@@ -149,29 +141,12 @@ class Scorer(torch.nn.Module):
         "out:[2]"
 
         # 1. 使用多头注意力，将蛋白质和化合物进行特征交互
-        pro_feat_mutual ,drug_feat_mutual = self.attention(pro_feat, drug_feat)
+        # pro_feat_mutual ,drug_feat_mutual = self.attention(pro_feat, drug_feat)
         
-        """
-        # drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        # prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        
-        # --- 药物特征池化 ---
-        drug_max = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        drug_avg = self.Drug_avg_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        # 拼接后的维度将是原来的 2 倍
-        drug_pool_feature = torch.cat([drug_max, drug_avg], dim=1)
-        # --- 蛋白质特征池化 ---
-        prot_max = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        prot_avg = self.Protein_avg_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
-        # 拼接后的维度将是原来的 2 倍
-        prot_pool_feature = torch.cat([prot_max, prot_avg], dim=1)
-        """
-
         # 1. 将输入映射到同一维度
-        prot_pool_feature, _ = self.user_pooling(pro_feat_mutual)  # [2,256]
-        drug_pool_feature, _ = self.item_pooling(drug_feat_mutual) #[2,256]
+        prot_pool_feature, _ = self.user_pooling(pro_feat)  # [2,256]
+        drug_pool_feature, _ = self.item_pooling(drug_feat) #[2,256]
         
-
         # 2. 预测打分
         output = self.score(prot_pool_feature, drug_pool_feature) #[2]
         
@@ -181,3 +156,29 @@ class Scorer(torch.nn.Module):
         
         return output
 
+
+
+
+
+# self.attention = cross_attention(head = 8, conv=self.fea_dim)
+# self.Drug_max_pool = nn.AdaptiveMaxPool1d(1)
+# self.Protein_max_pool = nn.AdaptiveMaxPool1d(1)
+# self.Drug_avg_pool = nn.AdaptiveAvgPool1d(1)
+# self.Protein_avg_pool = nn.AdaptiveAvgPool1d(1)
+
+
+"""
+# drug_pool_feature = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
+# prot_pool_feature = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
+
+# --- 药物特征池化 ---
+drug_max = self.Drug_max_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
+drug_avg = self.Drug_avg_pool(drug_feat_mutual.permute(0, 2, 1)).squeeze(2)
+# 拼接后的维度将是原来的 2 倍
+drug_pool_feature = torch.cat([drug_max, drug_avg], dim=1)
+# --- 蛋白质特征池化 ---
+prot_max = self.Protein_max_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
+prot_avg = self.Protein_avg_pool(pro_feat_mutual.permute(0, 2, 1)).squeeze(2)
+# 拼接后的维度将是原来的 2 倍
+prot_pool_feature = torch.cat([prot_max, prot_avg], dim=1)
+"""

@@ -4,88 +4,12 @@ import torch.optim as optim
 from tqdm import tqdm
 import os
 
-
-
-from model.multi_fusion import SelfAttention, EnhancedAttentionBlock
+from model.multi_fusion import SelfAttention
 from model.moe import *
 from utils.metrix import *
-from embedding.FeatureExtract import FeatureExtractor
-from model.scorer import Scorer
-from einops import rearrange
+from embedding.dataset import BertEmbeddings
+from model.scorer import Scorer, cross_attention
 
-class RMSNorm(nn.Module):
-    def __init__(self, dim, eps=1e-8):
-        super().__init__()
-        self.eps = eps
-        self.scale = nn.Parameter(torch.ones(dim))  # γ
-
-    def forward(self, x):
-        # x: [batch, seq_len, dim]
-        rms = x.pow(2).mean(-1, keepdim=True).sqrt()  # 计算 RMS
-        x_normed = x / (rms + self.eps)               # 归一化
-        return x_normed * self.scale
-
-class RotaryPositionEmbedding(nn.Module):
-    def __init__(self, dim):
-        super().__init__()
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
-        self.register_buffer("inv_freq", inv_freq)
-
-    def forward(self, seq_len, device):
-        t = torch.arange(seq_len, device=device).type_as(self.inv_freq)
-        freqs = torch.einsum("i , j -> i j", t, self.inv_freq)
-        return torch.cat((freqs, freqs), dim=-1)
-
-
-def rotate_half(x):
-    x = rearrange(x, "... (d j) -> ... d j", j=2)
-    x1, x2 = x.unbind(dim=-1)
-    return torch.cat((-x2, x1), dim=-1)
-
-def apply_rotary_pos_emb(pos, t):
-    return (t * pos.cos()) + (rotate_half(t) * pos.sin())
-
-
-class BertEmbeddings(nn.Module):
-    def __init__(self, vocab_size=767, hidden_size=768, max_position_embeddings=514, padding_idx=1):
-        super(BertEmbeddings, self).__init__()
-        
-        # 1. 词向量层: 词典大小 767, 维度 768
-        # padding_idx=1 表示索引为 1 的 token (通常是 <pad>) 不计入梯度更新
-        self.word_embeddings = nn.Embedding(vocab_size, hidden_size, padding_idx)
-        self.token_type_embeddings = nn.Embedding(1, hidden_size)# 3. 句子类型向量层
-
-        # Rotary Positional Embedding
-        self.rope = RotaryPositionEmbedding(hidden_size)
-
-        # self.LayerNorm = nn.LayerNorm(hidden_size, eps=1e-05)
-        self.LayerNorm = RMSNorm(hidden_size, eps=1e-05)
-        self.dropout = nn.Dropout(p=0.1)
-
-
-    def forward(self, input_ids, token_type_ids=None):
-        # 获取序列长度
-        seq_length = input_ids.size(1)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        # 如果没有传入 token_type_ids，默认为全 0
-        if token_type_ids is None:
-            token_type_ids = torch.zeros_like(input_ids)
-
-        # 词向量 + token type
-        words_emb = self.word_embeddings(input_ids)
-        type_emb = self.token_type_embeddings(token_type_ids)
-        embeddings = words_emb + type_emb
-
-        # RoPE 位置编码
-        pos_emb = self.rope(seq_length, device)
-        embeddings = apply_rotary_pos_emb(pos_emb, embeddings)
-
-        # 最后进行归一化和 Dropout
-        embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        return embeddings
-    
 
 
 class CMTargetModel(nn.Module):
@@ -99,6 +23,7 @@ class CMTargetModel(nn.Module):
         self.moe_emb_dim = 1024      # 3 专家编码参数
         self.use_selfatt = configs['use_selfatt']
         self.use_moe = configs['use_moe']
+        self.use_cross_att = configs['use_cross_att']
 
         # 4. 模型可学习参数
         self.protein_embed = BertEmbeddings(vocab_size=30, hidden_size=self.hidden_dim, max_position_embeddings=506, padding_idx=0)
@@ -119,6 +44,8 @@ class CMTargetModel(nn.Module):
             print("without MOE!!")
 
         # === 创建 打分 模型 ===
+        if self.use_cross_att:
+            self.cross_attention = cross_attention(head = 8, conv=self.hidden_dim)
         self.scorer = Scorer(configs, self.hidden_dim)
 
 
@@ -152,8 +79,14 @@ class CMTargetModel(nn.Module):
         else:
             load_balancing_loss=0
 
-        # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系 in:[2,501,256]  [2,68,256]
-        predicted_scores = self.scorer.forward(pro_hidden, drug_hidden)
+
+        # 5. 预测最终得分 : 预测蛋白质和化合物的相互作用关系
+        if self.use_cross_att:
+            drug_hidden ,pro_hidden = self.cross_attention(drug_hidden, pro_hidden)
+        else:
+            print("without cross-attention!!")
+
+        predicted_scores = self.scorer(pro_hidden, drug_hidden) # 池化+打分
         
         return predicted_scores, contrastive_Loss, load_balancing_loss
     

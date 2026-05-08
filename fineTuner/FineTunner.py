@@ -295,6 +295,7 @@ class FineTunner():
             logger.log_metrix(recall, precision, f1, accuracy, auc)
             
             if f1 > max_f1:
+                print("f1 was increased from {max_f1} to {f1} in epoch{i}.")
                 logger.update_true_score(y_true, y_score)
                 wait = 0  # 重置等待计数器
                 max_f1 = f1

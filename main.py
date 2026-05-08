@@ -50,6 +50,7 @@ def prepare():
     # 消融实验
     parser.add_argument('--use_moe', type = bool, default=False)
     parser.add_argument('--use_selfatt', type = bool, default=False)
+    parser.add_argument('--use_cross_att', type = bool, default=False)
 
     args = parser.parse_args()
 
@@ -76,6 +77,7 @@ def prepare():
 
     config['use_moe'] = args.use_moe
     config['use_selfatt'] = args.use_selfatt
+    config['use_cross_att'] = args.use_cross_att
     
     return config
 

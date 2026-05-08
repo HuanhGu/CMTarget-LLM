@@ -249,6 +249,7 @@ class CMTargetTrainer():
             
             # 保存最优模型 & 早停 : f1最大
             if f1 > max_f1:
+                print("f1 was increased from {max_f1} to {f1} in epoch{i}.")
                 logger.update_true_score(y_true, y_score)
                 max_f1 = f1
                 wait = 0  
