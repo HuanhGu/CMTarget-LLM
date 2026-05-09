@@ -5,8 +5,9 @@ data/
 pretrain.pt
 features/
 checkpoints/
-logs_dust_tune/
 logs/
+logs_dust/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,0 +1,21 @@
+{
+    "batch_size": 128,
+    "checkpoint_interval": 30,
+    "epochs_train": 200,
+    "epochs_tune": 200,
+    "learning_rate_pretrain": 2e-05,
+    "learning_rate_tune": 2e-06,
+    "model_path": "",
+    "patience_train": 15,
+    "patience_tune": 30,
+    "score_way": "Cosine",
+    "source_name": "drugbank",
+    "target_name": "hit",
+    "task": "train_tune",
+    "timestamp": "20260508_233549",
+    "hidden_dim": 512,
+    "remark": "without selfAtt.",
+    "use_moe": true,
+    "use_selfatt": false,
+    "use_cross_att": true
+}
