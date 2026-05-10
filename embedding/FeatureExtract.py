@@ -48,7 +48,8 @@ class FeatureExtractor(object):
             all_pro_smiles_spaced = [" ".join(list(seq)) for seq in all_pro_smiles]
             all_inputs = self.pro_tokenizer(all_pro_smiles_spaced)
             # 获取所有编码后的input_ids的长度，取最大值
-            mean_prolen_all = np.median([len(x) for x in all_inputs['input_ids']])
+            # mean_prolen_all = np.median([len(x) for x in all_inputs['input_ids']])
+            mean_prolen_all = np.percentile([len(x) for x in all_inputs['input_ids']], q=70)#去除极大值影响
             mean_prolen_all = int(mean_prolen_all)
             print(f"pro_smiles 的 全局中位数 token 长度为: {mean_prolen_all}")
             return mean_prolen_all

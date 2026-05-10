@@ -1,24 +1,17 @@
 import sys
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-
 import torch
 import argparse
 import json
 from pathlib import Path
-from torch.utils.data import DataLoader
-from datetime import datetime
 
-from embedding.FeatureExtract import FeatureExtractor
-
-from model.scorer import *
-from model.CMTargetModel import *
 from trainer.CMTargetTrainer import CMTargetTrainer
 from predictor.CMTargetPredictor import CMTargetPredictor
 from fineTuner.FineTunner import FineTunner
+
 from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -33,23 +26,23 @@ def prepare():
     parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#200
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-6 微调学习率应该更大还是更小？更小，约1/10 or 1/100
-    parser.add_argument('--model_path', type = str, default="") #./data/models/pretrain.pt
+    parser.add_argument('--model_path', type = str, default="logs/20260509_230207/checkpoints/pretrain.pt")
     
-    parser.add_argument('--patience_train', type = int, default=15) 
+    parser.add_argument('--patience_train', type = int, default=20) 
     parser.add_argument('--patience_tune', type = int, default=30) 
     parser.add_argument('-score', '--score_way', type=str, default='Cosine', help="choose a scorer, MF,GMF,Cosine.")
     
-    parser.add_argument('-s', '--source_name', type = str, default="drugbank")#drugbank
+    parser.add_argument('-s', '--source_name', type = str, default="drugbank")#drugbank,dti2_drugbank,dtii2
     parser.add_argument('-t', '--target_name', default='hit')#hit
     
     parser.add_argument('--hidden_dim', type = int, default='512', help="the dim of protein and drug in hidden layber.")#probert=1024, w2c=100, #chemberta=768
-    parser.add_argument('--task', type=str, default = "train_tune",help="choose the stage : train_tune, train, finetune, predict")
+    parser.add_argument('--task', type=str, default = "tune",help="choose the stage : train_tune, train, tune, predict")
     
-    parser.add_argument('-m', '--remark', type=str, default = "without selfAtt.")
+    parser.add_argument('-m', '--remark', type=str, default = "protein_seq_use_q90%")
     
     # 消融实验
     parser.add_argument('--use_moe', type = bool, default=True)
-    parser.add_argument('--use_selfatt', type = bool, default=False)
+    parser.add_argument('--use_selfatt', type = bool, default=True)
     parser.add_argument('--use_cross_att', type = bool, default=True)
 
     args = parser.parse_args()
@@ -143,9 +136,8 @@ if __name__ == '__main__':
 
 
 """
-nohup python -u main.py > main_0508_2335.log 2>&1 &
-tail -f main_0508_2335.log
-tail -f main_0507_2108_append.log
+nohup python -u main.py > main_0509_2259_tune.log 2>&1 &
+tail -f main_0509_2259_tune.log
 ps -ef | grep main.py
 kill -9 <PID>
 """
