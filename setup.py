@@ -18,7 +18,8 @@ setup(
         "matplotlib>=3.6.3",
         "peft>=0.17.1",
         "h5py",
-        "torchinfo"
+        "torchinfo",
+        "einops"
     ],
     python_requires=">=3.9",      # Python 版本要求
 )
