@@ -22,15 +22,17 @@ class FeatureExtractor(object):
 
         # 1. 预加载模型，避免在循环中重复加载
         # print("Loading ChemBERTa model...")
-        self.w2v_model = Word2Vec.load("./embedding/word2vec_30.model")
+        # self.w2v_model = Word2Vec.load("./embedding/word2vec_30.model")
         
-        local_model_path = "/root/gpufree-data/workplace/CMTarget-LLM/embedding/ChemBERTa/"
+        # local_model_path = "/root/gpufree-data/workplace/CMTarget-LLM/embedding/ChemBERTa/"
+        local_model_path = "seyonec/ChemBERTa-zinc-base-v1"
         self.drug_tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
         self.drug_model = AutoModel.from_pretrained(local_model_path, local_files_only=True).to(self.device)
         self.drug_model.eval()
 
-        self.pro_tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False, local_files_only=True)
-        self.pro_model = AutoModel.from_pretrained("Rostlab/prot_bert", local_files_only=True).to(self.device)
+        # "Rostlab/prot_bert"
+        self.pro_tokenizer = AutoTokenizer.from_pretrained("./embedding/ProBert", do_lower_case=False, local_files_only=True)
+        self.pro_model = AutoModel.from_pretrained("./embedding/ProBert", local_files_only=True).to(self.device)
         self.pro_model.eval()
 
 

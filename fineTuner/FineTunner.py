@@ -85,10 +85,12 @@ class FineTunner():
             csv_dir = Path('data/dataset')  / dataname 
 
             train_df = pd.read_csv(csv_dir / 'train.csv')
+            train_df=train_df[:50]
             train_dataset = DTIDataset(train_df)
             train_size = len(train_dataset)
 
             test_df = pd.read_csv(csv_dir / 'test.csv')
+            test_df = test_df[:50]
             test_dataset = DTIDataset(test_df)
             test_size = len(test_dataset)
 
@@ -152,7 +154,7 @@ class FineTunner():
             model = get_peft_model(model, lora_config)
             model.print_trainable_parameters()      #trainable params: 49,152 || all params: 28,791,298 || trainable%: 0.1707
             
-            print(f"lora_config:{lora_config}")
+            # print(f"lora_config:{lora_config}")
             return model
 
 

@@ -19,14 +19,14 @@ warnings.filterwarnings("ignore")
 def prepare():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 128)#128
+    parser.add_argument('-bs', '--batch_size', type = int, default = 32)#128
 
     parser.add_argument('--checkpoint_interval', type=int, default=30)
-    parser.add_argument('-eptr', '--epochs_train', type=int, default = 200)#300
-    parser.add_argument('-eptu', '--epochs_tune', type=int, default = 200)#200
+    parser.add_argument('-eptr', '--epochs_train', type=int, default = 2)#300
+    parser.add_argument('-eptu', '--epochs_tune', type=int, default = 2)#200
     parser.add_argument('-lrp', '--learning_rate_pretrain', type=float, default = 2e-5)
     parser.add_argument('-lrt', '--learning_rate_tune', type=float, default = 2e-6) # 2e-6 微调学习率应该更大还是更小？更小，约1/10 or 1/100
-    parser.add_argument('--model_path', type = str, default="logs/20260509_230207/checkpoints/pretrain.pt")
+    parser.add_argument('--model_path', type = str, default="")#logs/20260509_230207/checkpoints/pretrain.pt
     
     parser.add_argument('--patience_train', type = int, default=20) 
     parser.add_argument('--patience_tune', type = int, default=30) 

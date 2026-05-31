@@ -8,7 +8,7 @@ setup(
     packages=find_packages(),     # 自动寻找项目中的所有文件夹（需包含 __init__.py）
     install_requires=[            # 依赖列表，安装时会自动下载
         "torch>=2.0.0",
-        "transformers>=4.57.6, <5.0.0",
+        "transformers>=4.50.3, <5.0.0",
         "numpy>=1.23.5,<2.0.0",
         "tqdm",
         "pandas>=2.3.3",
