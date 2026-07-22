@@ -51,7 +51,7 @@ predictor/：关系预测阶段（未完成）
 utils/pyproject.toml：（废弃）
 ```
 
-### 2.3 ProBert模型下载使用方法
+### 2.3 Bert 模型下载使用方法
 
 ```bash
 # 在服务器上使用, 先下载, 再使用下面这段代码加载模型
@@ -59,7 +59,9 @@ export HF_ENDPOINT="https://hf-mirror.com"
 huggingface-cli download --resume-download seyonec/ChemBERTa-zinc-base-v1 --local-dir ./embedding/ChemBERTa
 huggingface-cli download --resume-download Rostlab/prot_bert --local-dir ./embedding/ProBert
 ```
+- 在代码中手动修改bert模型地址：
 
+![alt text](./assets/Bert_Model.png)
 
 
 ## 3. 小样本快速运行
