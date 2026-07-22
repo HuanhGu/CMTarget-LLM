@@ -45,7 +45,6 @@ setup.py：模型运行所需环境
 
 ```bash
 embedding/：特征预提取、数据集封装
-	FeatureExtract.py：提取蛋白质特征（ProBert）和化合物特征（ChemBerta）
 	word2vec_30.model：下载的word2vec模型
 	word2vec.py：使用word2vec模型提取特征
 predictor/：关系预测阶段（未完成）
