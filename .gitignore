@@ -2,11 +2,7 @@
 data/
 /embedding/ChemBERTa/
 /embedding/ProBert/
-pretrain.pt
-features/
-checkpoints/
-logs/
-logs_dust/
+
 
 
 # Byte-compiled / optimized / DLL files

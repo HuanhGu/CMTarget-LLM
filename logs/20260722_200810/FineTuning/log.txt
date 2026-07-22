@@ -1,0 +1,7 @@
+Epoch [1/2] Train_loss = 0.9623, acc = 56.0
+Epoch [1/2] Test_loss = 0.9861, recall = 1.0, precision = 0.5156, f1 = 0.6803, accuracy = 0.5156, auc = 0.5
+
+Epoch [2/2] Train_loss = 0.9603, acc = 56.0
+Epoch [2/2] Test_loss = 0.9824, recall = 1.0, precision = 0.5156, f1 = 0.6803, accuracy = 0.5156, auc = 0.5
+
+[BEST] recall = 1.0, precision = 0.5156, f1 = 0.6803, accuracy =0.5156, auc = 0.5

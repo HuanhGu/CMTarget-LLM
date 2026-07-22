@@ -319,38 +319,3 @@ class FineTunner():
                 print(f"Checkpoint saved at epoch {i+1} to {checkpoint_path}💾")
 
         print(f"\n✅ fine-Tuning finished, model has been saved to {output_path}")
-
-
-'''
-思考：
-1. batchsize是否越大越好?
-我的数据条数只有：总数据数目:4499, 训练集数目:3599, 测试集数目:900。
-
-2. 我现在 微调（靠前模型层）+ 后训练（靠后模型层）
-step1 : 临界点 moe.down_proj,  —— 0.62+效果
-step2 : 临界点 moe.up_proj —— 效果不好
-
-3. 
-
-'''
-'''
-config = LoraConfig(
-    r=16, # LoRA 的秩，可根据显存调整（常用 8, 16, 32）
-    lora_alpha=32, # 缩放系数，通常设为 r 的 2 倍
-    # 重点：target_modules 需要包含模型中所有的线性层关键字
-    target_modules=[
-        # 1. 蛋白质与药物的 Attention 部分
-        "W_Q", "W_K", "W_V", 
-        # 2. MoE 专家系统内的投影层 (Qwen2MoeMLP)
-        "gate_proj", "up_proj", "down_proj",
-        # 3. MoE 的门控机制
-        "gate", "shared_expert_gate",
-        # 4. Scorer 评分层中的线性层
-        "d_a", "p_a", "tune_linear1"
-    ],
-    lora_dropout=0.1,
-    bias="none", # 默认不训练 bias
-    modules_to_save=["scorer.score"], # 如果 Cosine 是可学习的，或者想全参数微调输出层
-    task_type=None # 因为是自定义模型，设为 None 或自定义字符串
-)
-'''
