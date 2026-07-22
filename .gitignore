@@ -2,6 +2,7 @@
 data/
 /embedding/ChemBERTa/
 /embedding/ProBert/
+checkpoints/
 
 
 
