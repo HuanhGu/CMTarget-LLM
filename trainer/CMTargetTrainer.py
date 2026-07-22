@@ -50,7 +50,7 @@ class CMTargetTrainer():
         # self.criterion = nn.BCELoss()  # 使用二分类交叉熵损失函数  必须用signomid
         self.criterion = nn.BCEWithLogitsLoss()  # 不用sigmoid
         
-
+        # 参数初始化
         weight_p, bias_p = [], []
         for name, p in self.model.named_parameters():
             if 'bias' in name:

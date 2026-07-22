@@ -11,7 +11,7 @@ class DTIDataset(Dataset):
     '''
     def __init__(self, d_df):
         self.fe = FeatureExtractor()
-        # 获取所有化合物序列的最大token数量
+        # 获取所有化合物序列的最大token数量/平均token数量，便于特征对齐
         self.d_max_tokenLen = self.fe.get_chemberta_max_length(d_df['compound'].tolist()) #222
         self.p_max_tokenLen = self.fe.get_probert_max_length(d_df['protein'].tolist()) #506
         # self.p_max_tokenLen, p_max_kmers = self.feature_extractor.get_protein_max_kmers(d_df['protein'].tolist())

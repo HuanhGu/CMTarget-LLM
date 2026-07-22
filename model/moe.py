@@ -96,7 +96,7 @@ class Qwen2MoeSparseMoeBlock(nn.Module):
 
 
 
-#=============================================================
+#========================以下为废弃代码=====================================
 class BasicMOE(nn.Module):
     def __init__(self, dim, expert_dim, expert_number):
         super().__init__()

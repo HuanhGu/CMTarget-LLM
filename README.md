@@ -1,69 +1,109 @@
-# AtMoE-DTI
+## AtMoE模型
 
-迁移学习，中药DTI，DTI，预训练微调，注意力机制，Qwen2.5混合专家，交互注意力
+- 关键词：迁移学习，中药DTI，DTI，预训练-微调，注意力机制，Qwen2.5混合专家，交互注意力
 
-## 模型架构图
+- 模型架构图：
+
 ![alt text](./assets/AtMoE-DTI.png)
 
-## 消融实验
-目录：./logs_ablation_V1
+## 代码介绍
 
-### 结果
-#### 预训练
-| ablation        | recall            | precision        | f1                | acc               | auc               |
-| --------------- | ----------------- | ---------------- | ----------------- | ----------------- | ----------------- |
-| keep all module | 0.7882            | 0.7826           | 0.7854            | 0.7900            | 0.7900            |
-| wo selfAtt      | -                 | -                | -                 | -                 | -                 |
-| wo Moe          | 0.7122 (↓ 9.64%)  | 0.8132 (↑ 3.91%) | 0.7593 (↓ 3.32%)  | 0.7786 (↓ 1.44%)  | 0.7773 (↓ 1.61%)  |
-| wo MOE&selfAtt  | 0.6619 (↓ 16.02%) | 0.7046 (↓ 9.97%) | 0.6826 (↓ 13.09%) | 0.6980 (↓ 11.65%) | 0.6972 (↓ 11.75%) |
-| wo crossAtt     | 0.7923 (↑ 0.52%)  | 0.7804 (↓ 0.28%) | 0.7863 (↑ 0.11%)  | 0.7888 (↓ 0.15%)  | 0.7888 (↓ 0.15%)  |
+### 已用文件夹
+
+```
+data/dataset：数据集文件夹
+	data/hit/hit.csv：全量数据集
+	data/hit/train.csv：训练集
+	data/hit/test.csv：测试集
+embedding/：特征预提取、数据集封装
+	ProBert/：在网络上下载 ProBert 模型到本地
+	ChemBerta/：在网络上下载 ChemBerta 模型到本地
+	dataset.py：模型图中的第一模块，序列嵌入&位置编码（这里采用 Bert 模型的词表进行‘序列转数字id’）
+fineTuner/：微调阶段
+	FineTunner.py：微调阶段代码
+		get_dataloader函数：加载csv数据集，并提取序列特征
+		get_model函数：加载模型，定义模型的哪些层冻结、哪些进行低秩训练
+		get_loss函数：
+		model_train_anepoch函数：训练集训练
+		model_evaluate_anepoch函数：测试集测试
+		fineTune函数：整个微调阶段的流程封装
+logs/：过程记录，初始时需创建一个空logs文件夹
+model/：模型定义
+	CMTargetModel.py：模型整体封装、模型训练过程
+	moe.py、multi_fusion.py、scorer.py：模型的第2-4模块	
+trainer/：预训练阶段
+	CMTargetTrainer.py：和 FineTunner.py 基本一致
+utils/：其它配置
+	metrix.py：计算评价指标
+	utils.py：
+		MultiTaskLossWrapper函数：自动学习损失函数的权重参数（可训练）
+main.py：模型运行入口，定义运行参数、模型参数等。
+setup.py：模型运行所需环境
+```
+
+### 未用文件夹
+
+```bash
+embedding/：特征预提取、数据集封装
+	FeatureExtract.py：提取蛋白质特征（ProBert）和化合物特征（ChemBerta）
+	word2vec_30.model：下载的word2vec模型
+	word2vec.py：使用word2vec模型提取特征
+predictor/：关系预测阶段（未完成）
+utils/pyproject.toml：（废弃）
+```
+
+### ProBert模型下载使用方法
+
+```bash
+# 在服务器上使用, 先下载, 再使用下面这段代码加载模型
+export HF_ENDPOINT="https://hf-mirror.com"
+huggingface-cli download --resume-download seyonec/ChemBERTa-zinc-base-v1 --local-dir ./embedding/ChemBERTa
+huggingface-cli download --resume-download Rostlab/prot_bert --local-dir ./embedding/ProBert
+```
 
 
-#### 微调
-| ablation        | recall           | precision        | f1               | acc              | auc              |
-| --------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
-| keep all module | 0.6211           | 0.6275           | 0.6240           | 0.6271           | 0.6270           |
-| wo selfAtt      | -                | -                | -                | -                | -                |
-| wo Moe          | 0.5881 (↓ 5.31%) | 0.6254 (↓ 0.33%) | 0.6060 (↓ 2.88%) | 0.6243 (↓ 0.45%) | 0.6229 (↓ 0.65%) |
-| wo MOE&selfAtt  | 0.6616 (↑ 6.52%) | 0.5665 (↓ 9.72%) | 0.6103 (↓ 2.20%) | 0.5839 (↓ 6.89%) | 0.5849 (↓ 6.71%) |
-| wo crossAtt     | 0.5988 (↓ 3.59%) | 0.6330 (↑ 0.88%) | 0.6152 (↓ 1.41%) | 0.6319 (↑ 0.77%) | 0.6312 (↑ 0.67%) |
 
+## 小样本快速运行
+### 说明
 
-### 过程
-#### 预训练
+- 预训练阶段和微调阶段：训练集、测试集各取50条数据（在 get_dataloader函数 可以看到）。
 
-all_perfect [BEST] recall = 0.7882, precision = 0.7826, f1 = 0.7854, accuracy =0.79, auc = 0.79
+<img src="./assets/small_data.png" alt="alt text" style="zoom:33%;" />
 
-wo crossAtt  [BEST] = 0.7923, precision = 0.7804, f1 = 0.7863, accuracy =0.7888, auc = 0.7888
+### 环境配置
 
-moe+self [BEST] recall = 0.6619, precision = 0.7046, f1 = 0.6826, accuracy =0.698, auc = 0.6972
+创建虚拟环境后，运行：
 
-moe [BEST] recall = 0.7122, precision = 0.8132, f1 = 0.7593, accuracy =0.7786, auc = 0.7773
+```bash
+conda create -n cmtarget python=3.10
+conda activate cmtarget
+pip install -e .
+```
 
-| ablation        | recall     | precision  | f1     | acc    | auc    |
-| --------------- | ---------- | ---------- | ------ | ------ | ------ |
-| keep all module | 0.7882     | 0.7826     | 0.7854 | 0.79   | 0.79   |
-| wo selfAtt      |            |            |        |        |        |
-| wo Moe          | 0.7122     | **0.8132** | 0.7593 | 0.7786 | 0.7773 |
-| wo MOE&selfAtt  | 0.6619     | 0.7046     | 0.6826 | 0.698  | 0.6972 |
-| wo crossAtt     | **0.7923** | 0.7804     | 0.7863 | 0.7888 | 0.7888 |
+### 运行
+
+```bash
+python main.py
+```
 
 
 
-#### 微调
 
-all [BEST] recall = 0.6211, precision = 0.6275, f1 = 0.624, accuracy =0.6271, auc = 0.627
 
-cross_attention [BEST] recall = 0.5988, precision = 0.633, f1 = 0.6152, accuracy =0.6319, auc = 0.6312
+## 数据集介绍
 
-moe+self [BEST] recall = 0.6616, precision = 0.5665, f1 = 0.6103, accuracy =0.5839, auc = 0.5849
+- drugbank 数据集：
+  - 总样本数: 37283
+  - 训练集大小: 29826 (80%)
+  - 测试集大小: 7457 (20%)
 
-moe [BEST] recall = 0.5881, precision = 0.6254, f1 = 0.606, accuracy =0.6243, auc = 0.6229
+- HIT2.0 数据集：
+  - 总样本数: 4499
+  - 训练集大小: 3599 (80%)
+  - 测试集大小: 900 (20%)
 
-| ablation        | recall | precision | f1     | acc    | auc    |
-| --------------- | ------ | --------- | ------ | ------ | ------ |
-| keep all module | 0.6211 | 0.6275    | 0.624  | 0.6271 | 0.627  |
-| wo selfAtt      |        |           |        |        |        |
-| wo Moe          | 0.5881 | 0.6254    | 0.606  | 0.6243 | 0.6229 |
-| wo MOE&selfAtt  | 0.6616 | 0.5665    | 0.6103 | 0.5839 | 0.5849 |
-| wo crossAtt     | 0.5988 | 0.633     | 0.6152 | 0.6319 | 0.6312 |
+- DTI2 数据集：
+  - 总样本数: 62490
+  - 训练集大小: 49992 (80%)
+  - 测试集大小: 12498 (20%)
+

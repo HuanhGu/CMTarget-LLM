@@ -36,7 +36,7 @@ def prepare():
     parser.add_argument('-t', '--target_name', default='hit')#hit
     
     parser.add_argument('--hidden_dim', type = int, default='512', help="the dim of protein and drug in hidden layber.")#probert=1024, w2c=100, #chemberta=768
-    parser.add_argument('--task', type=str, default = "tune",help="choose the stage : train_tune, train, tune, predict")
+    parser.add_argument('--task', type=str, default = "train_tune",help="choose the stage : train_tune, train, tune, predict")
     
     parser.add_argument('-m', '--remark', type=str, default = "protein_seq_use_q90%")
     

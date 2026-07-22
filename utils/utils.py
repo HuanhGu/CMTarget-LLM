@@ -6,6 +6,10 @@ import csv
 from pathlib import Path
 import torch.nn as nn
 import torch
+
+'''
+自动调整 各个损失的权重
+'''
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num):
         super(MultiTaskLossWrapper, self).__init__()
