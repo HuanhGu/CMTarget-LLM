@@ -1,4 +1,4 @@
-## AtMoE模型
+## 1. AtMoE模型
 
 - 关键词：迁移学习，中药DTI，DTI，预训练-微调，注意力机制，Qwen2.5混合专家，交互注意力
 
@@ -6,9 +6,9 @@
 
 ![alt text](./assets/AtMoE-DTI.png)
 
-## 代码介绍
+## 2. 代码介绍
 
-### 已用文件夹
+### 2.1 已用文件夹
 
 ```
 data/dataset：数据集文件夹
@@ -41,7 +41,7 @@ main.py：模型运行入口，定义运行参数、模型参数等。
 setup.py：模型运行所需环境
 ```
 
-### 未用文件夹
+### 2.2 未用文件夹
 
 ```bash
 embedding/：特征预提取、数据集封装
@@ -52,7 +52,7 @@ predictor/：关系预测阶段（未完成）
 utils/pyproject.toml：（废弃）
 ```
 
-### ProBert模型下载使用方法
+### 2.3 ProBert模型下载使用方法
 
 ```bash
 # 在服务器上使用, 先下载, 再使用下面这段代码加载模型
@@ -63,14 +63,14 @@ huggingface-cli download --resume-download Rostlab/prot_bert --local-dir ./embed
 
 
 
-## 小样本快速运行
-### 说明
+## 3. 小样本快速运行
+### 3.1 说明
 
 - 预训练阶段和微调阶段：训练集、测试集各取50条数据（在 get_dataloader函数 可以看到）。
 
 <img src="./assets/small_data.png" alt="alt text" style="zoom:33%;" />
 
-### 环境配置
+### 3.2 环境配置
 
 创建虚拟环境后，运行：
 
@@ -80,7 +80,7 @@ conda activate cmtarget
 pip install -e .
 ```
 
-### 运行
+### 3.3 运行
 
 ```bash
 python main.py
@@ -88,9 +88,11 @@ python main.py
 
 
 
+## 4. 数据集介绍
 
-
-## 数据集介绍
+```
+数据集链接: https://pan.baidu.com/s/103TiEI-UkiLfH8DZ5OaiJw?pwd=tusp 提取码: tusp 
+```
 
 - drugbank 数据集：
   - 总样本数: 37283
@@ -106,4 +108,6 @@ python main.py
   - 总样本数: 62490
   - 训练集大小: 49992 (80%)
   - 测试集大小: 12498 (20%)
+
+
 
